@@ -1,0 +1,15 @@
+name = "neural_field"
+
+[deps]
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+GalerkinToolkit = "5e3ba9c4-dd81-444d-b69a-0e7bd7bf60a4"
+Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[compat]
+DrWatson = "2.19.1"
+julia = "1.11.5"
