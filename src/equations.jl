@@ -2,6 +2,8 @@
 All equations used in the neural field model are defined in this file 
 """
 
+using LinearAlgebra
+
 function w(x,y)
     WAε(norm(x-y))
 end

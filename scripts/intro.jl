@@ -1,4 +1,11 @@
 using DrWatson
+import GalerkinToolkit as GT
+import GLMakie as Makie
+import DifferentialEquations as DE
+import ProgressMeter as PM
+using LinearAlgebra
+using SparseArrays
+
 @quickactivate "neural_field"
 
 # Here you may include files from the source directory
@@ -27,15 +34,6 @@ dΩ = GT.quadrature(Ω,integration_degree)
 face_lpoint_x = GT.sample(x->x,dΩ)
 point_x = face_lpoint_x.data
 npoints = length(point_x)
-
-#Coordinate and weight accessors 
-dΩ_faces = GT.each_face(dΩ)
-face = 4
-dΩ_face = dΩ_faces[4]
-dΩ_points = GT.each_point(dΩ_face)
-lpoint = 3
-dΩ_point = dΩ_points[lpoint]
-GT.coordinate(dΩ_point)
 
 #Synaptic matrix 
 

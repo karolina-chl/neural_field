@@ -22,6 +22,7 @@ function circle_mesh(gmsh, mesh_size, R)
 end
 
 function plot_circle_mesh(Ω)
+    """Plot circle mesh"""
     axis = (aspect = Makie.DataAspect(),)
     shading = Makie.NoShading
     fig = GT.makie_surfaces(Ω;color=:pink,axis,shading)
@@ -30,7 +31,6 @@ function plot_circle_mesh(Ω)
 end 
 
 function synaptic_matrix(V,dΩ)
-    dΩ_faces = GT.each_face(dΩ)
     node_x = GT.node_coordinates(V)
     # Count number of nz in matrix
     nnz = 0
@@ -75,6 +75,7 @@ function synaptic_matrix(V,dΩ)
     W = sparse(WI,WJ,WV,nnodes,npoints)
     return W
 end
+
 
 function rhs!(node_du,node_u,p,t;workspace)
     (;W,V,dΩ,node_wfu,point_fu) = workspace
