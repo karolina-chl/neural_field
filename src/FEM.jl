@@ -93,3 +93,40 @@ function rhs!(node_du,node_u,p,t;workspace)
     node_du .= node_wfu .- node_u
 end
 
+function rhs_delayed!(
+    (node_du, node_node_dz),  # L = 1
+    (node_u, node_node_z),
+    p,
+    t;
+    workspace::NamedTuple,
+)
+    (; W, shape_space, dΩ, node_wfz, point_fz, f) = workspace
+    n_nodes = length(node_u)
+    n_points = size(W,2)
+    # Interpolation of the z_L from nodes to quadratures
+    for i in 1:n_nodes
+        node_z = view(node_node_z, :, i)
+        disc_Ω = GT.discrete_field(shape_space, node_z)
+        z_faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
+        p = 0  # μ is going to denote the quadrature points in the field (in the documentation it replaces ũ)
+        for z_face in z_faces
+            for z_point in GT.each_point(z_face)
+                p += 1
+                z = GT.field(GT.value, z_point)
+                point_node_fz[p, i] = f(z) #consider removing the matrix point_node_fz
+            end
+        end
+        node_du[i] = 0
+        for p in 1:n_points
+            node_du[i] +=  W[i,p]*point_node_fz[p, i]
+        end 
+        node_du[i] -= node_u[i] 
+    end
+    ## Q part is missing llop over j and i and both loops are lenths 
+
+    for i in 1:n_nodes
+        for j in 1:n_nodes
+            node_node_dz[j,i] = alpha_ji *(node_u[j] - node_node_z[j,i]) #need to compute alpha (separate function)
+        end     
+    end    
+end

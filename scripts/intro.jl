@@ -12,6 +12,7 @@ using SparseArrays
 include(srcdir("FEM.jl"))
 include(srcdir("equations.jl"))
 
+### Create a mesh
 mesh_size = 7
 R = 30
 axis = (aspect = Makie.DataAspect(),)
@@ -20,7 +21,7 @@ mesh = GT.with_gmsh(gmsh -> circle_mesh(gmsh, mesh_size, R))
 Ω = GT.interior(mesh)
 plot_circle_mesh(Ω)
 
-### NEW
+### Finite element interpolation
 interpolation_degree = 1
 V = GT.lagrange_space(Ω,interpolation_degree)
 node_x = GT.node_coordinates(V)
@@ -55,12 +56,12 @@ point_fu = similar(node_wfu,npoints)
 workspace = (;W,V,dΩ,node_wfu,point_fu)
 
 #ODE solution
-
-T = 50 # Use 400 for nicer results
-node_u = φ.(node_x)
+T = 400 # Use 400 for nicer results
 ode = DE.ODEProblem(node_u,[0,T]) do args...
     rhs!(args...;workspace)
 end
+
+#plot the solution and save as mp3
 color = u
 fig = Makie.Figure()
 ax,sc = GT.makie_surfaces(fig[1,1],Ω;color,axis,refinement=3,colormap)
