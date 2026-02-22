@@ -29,7 +29,9 @@ node_x = GT.node_coordinates(V)
 
 ### Initial conditions 
 node_u = φ.(node_x)
-#node_z = 
+dim_u = length(node_u)
+num_layer = 1
+node_node_z = z_initial(num_layer, dim_u)
 
 ### Numerical integration 
 integration_degree = 2*interpolation_degree
@@ -44,24 +46,29 @@ W = synaptic_matrix(V,dΩ)
 #Finite element function accessors # is there something to be change here?
 u = GT.discrete_field(V,node_u)
 u_faces = GT.each_face(u,dΩ;tabulate=(GT.value,))
-face = 4
-u_face = u_faces[face]
-u_points = GT.each_point(u_face)
-lpoint = 3
-u_point = u_points[lpoint]
-GT.field(GT.value,u_point)
+
 
 #ODE right-hand-side 
 n_nodes = length(node_u)
-n_points = size(W,2)
-point_fz = zeros(n_points, n_nodes)
-node_wfz = similar(node_x,Float64) # will this actually be the same size? 
-workspace = (;W,V,dΩ,node_wfu,point_fz, f)
+n_points = size(W,2) #??
+node_wfz = similar(node_x, Float64) 
+point_node_fz = zeros(n_points, n_nodes) #use similar like before?
+workspace = (;W,V,dΩ,node_wfz,point_node_fz, f)
 
 #ODE solution
 T = 400 # Use 400 for nicer results
-ode = DE.ODEProblem(node_u,[0,T]) do args...
-    rhs!(args...;workspace)
+ode = DE.ODEProblem((node_u, node_node_z),[0,T]) do args...
+    rhs_delayed!(args...;workspace)
 end
 
-
+#plot the solution and save as mp3
+color = u
+fig = Makie.Figure()
+ax,sc = GT.makie_surfaces(fig[1,1],Ω;color,axis,refinement=3,colormap)
+fn = "solution.mp4"
+integrator = DE.init(ode, DE.Tsit5())
+prog = PM.ProgressThresh(0.0)
+Makie.record(fig,fn,DE.tuples(integrator);framerate=10) do (node_u,t)
+    sc.color = GT.discrete_field(V,node_u)
+    PM.update!(prog,T-t)
+end

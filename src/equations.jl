@@ -30,3 +30,13 @@ function WAε(x)
     Ax = A(x)
     abs(Ax) >= ε ? Ax : zero(Ax)
 end
+
+function τ(x,y)
+    τ_0 = 0.5
+    τ_1 = 1
+    τ_0 + τ_1*abs(x-y)
+end 
+
+function α(x,y, num_layer)
+    num_layer/τ(x,y)
+end
