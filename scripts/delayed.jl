@@ -5,6 +5,7 @@ import DifferentialEquations as DE
 import ProgressMeter as PM
 using LinearAlgebra
 using SparseArrays
+using RecursiveArrayTools
 
 @quickactivate "neural_field"
 
@@ -50,16 +51,19 @@ u_faces = GT.each_face(u,dΩ;tabulate=(GT.value,))
 
 #ODE right-hand-side 
 n_nodes = length(node_u)
-n_points = size(W,2) #??
+n_points = size(W,2) 
 node_wfz = similar(node_x, Float64) 
 point_node_fz = zeros(n_points, n_nodes) #use similar like before?
 workspace = (;W,V,dΩ,node_wfz,point_node_fz, f)
 
 #ODE solution
-T = 400 # Use 400 for nicer results
-ode = DE.ODEProblem((node_u, node_node_z),[0,T]) do args...
+T = 100 # Use 400 for nicer results
+uz_array = ArrayPartition(node_u, node_node_z)
+ode = DE.ODEProblem(uz_array,[0,T]) do args...
     rhs_delayed!(args...;workspace)
 end
+
+
 
 #plot the solution and save as mp3
 color = u
@@ -69,6 +73,7 @@ fn = "solution.mp4"
 integrator = DE.init(ode, DE.Tsit5())
 prog = PM.ProgressThresh(0.0)
 Makie.record(fig,fn,DE.tuples(integrator);framerate=10) do (node_u,t)
+    node_u = uz_array.x[1] 
     sc.color = GT.discrete_field(V,node_u)
     PM.update!(prog,T-t)
 end

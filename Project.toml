@@ -8,6 +8,7 @@ GalerkinToolkit = "5e3ba9c4-dd81-444d-b69a-0e7bd7bf60a4"
 Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]

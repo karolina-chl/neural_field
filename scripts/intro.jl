@@ -56,7 +56,7 @@ point_fu = similar(node_wfu,npoints)
 workspace = (;W,V,dΩ,node_wfu,point_fu)
 
 #ODE solution
-T = 400 # Use 400 for nicer results
+T = 10 # Use 400 for nicer results
 ode = DE.ODEProblem(node_u,[0,T]) do args...
     rhs!(args...;workspace)
 end

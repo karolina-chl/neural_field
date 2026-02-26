@@ -31,12 +31,16 @@ function WAε(x)
     abs(Ax) >= ε ? Ax : zero(Ax)
 end
 
-function τ(x,y)
+function τ(x,y) 
+    #this function accepts node coordinates 
     τ_0 = 0.5
-    τ_1 = 1
-    τ_0 + τ_1*abs(x-y)
+    τ_1 = 0.01
+    diff = (x .- y).^2
+    distance_xy = sqrt(sum(diff))
+    τ_0 + τ_1*distance_xy
 end 
 
 function α(x,y, num_layer)
+    #this function accepts node coordinates
     num_layer/τ(x,y)
 end

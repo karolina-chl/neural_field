@@ -98,41 +98,51 @@ end
 # end 
 
 function z_initial(num_layer, dim_u)
-    return zeros(dim_u,dim_u) 
+    return ones(dim_u,dim_u) 
 end 
 
 
 function rhs_delayed!(
-    (node_du, node_node_dz),  # L = 1
-    (node_u, node_node_z),
+    duz,
+    uz,
     p,
     t;
     workspace::NamedTuple,
 )
     (; W, V, dΩ, node_wfz, point_node_fz, f) = workspace
+
+    node_u  = uz.x[1]     
+    node_du = duz.x[1]  
+
+    node_node_z  = uz.x[2]
+    node_node_dz = duz.x[2]
+
     n_nodes = length(node_u)
     num_layer = 1 # maybe this should be input?
-    ## Q part is missing llop over j and i and both loops are lenths 
+
     # Interpolation of the z_L from nodes to quadratures
     for i in 1:n_nodes
         node_z = view(node_node_z, :, i)
         disc_Ω = GT.discrete_field(V, node_z)
         z_faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
-        qp = 0  # μ is going to denote the quadrature points in the field (in the documentation it replaces ũ)
+        qp = 0  
         node_du[i] = 0
         for z_face in z_faces
             for z_point in GT.each_point(z_face)
                 qp += 1
-                z = GT.field(GT.value, z_point)
-                point_node_fz[qp, i] = f(z) #consider removing the matrix point_node_fz
+                point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
+                point_node_fz[qp, i] = f(point_node_z) #consider removing the matrix point_node_fz
                 node_du[i] +=  W[i,qp]*point_node_fz[qp, i]
             end
         end
         node_du[i] -= node_u[i]
     end
-    for i in 1:n_nodes
+    node_x = GT.node_coordinates(V)
+    for i in 1:n_nodes #iterating column by column 
         for j in 1:n_nodes
-            node_node_dz[j,i] = α(i,j, num_layer) *(node_u[j] - node_node_z[j,i]) 
+            node_i = node_x[i]
+            node_j = node_x[j]
+            node_node_dz[j,i] = α(node_i, node_j, num_layer) *(node_u[j] - node_node_z[j,i]) 
         end     
     end   
 end
