@@ -31,7 +31,7 @@ function plot_circle_mesh(Ω)
     Makie.save("domain.png", fig)
 end 
 
-function synaptic_matrix(V,dΩ)
+function synaptic_matrix(V,dΩ,w)
     node_x = GT.node_coordinates(V)
     # Count number of nz in matrix
     nnz = 0
@@ -107,7 +107,7 @@ function rhs_delayed!(
 )
     (; W, V, dΩ, node_wfz, point_node_fz, f) = workspace
 
-    num_layer = 4 # maybe this should be input?
+    num_layer = length(uz.x) - 1
 
     node_u  = uz.x[1] # modifies in place 
     node_du = duz.x[1]  
