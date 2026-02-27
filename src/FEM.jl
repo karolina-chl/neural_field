@@ -4,6 +4,7 @@ Functions needed for FEM method
 
 import GalerkinToolkit as GT
 import GLMakie as Makie
+using RecursiveArrayTools
 import Gmsh
 
 include("equations.jl")
@@ -93,14 +94,9 @@ function rhs!(node_du,node_u,p,t;workspace)
     node_du .= node_wfu .- node_u
 end
 
-# function z_initial(num_layer, dim_u)
-#     return [zeros(dim_u,dim_u) for _ in 1:num_layer] 
-# end 
-
 function z_initial(num_layer, dim_u)
-    return ones(dim_u,dim_u) 
+    return [ones(dim_u,dim_u) for _ in 1:num_layer] 
 end 
-
 
 function rhs_delayed!(
     duz,
@@ -111,18 +107,17 @@ function rhs_delayed!(
 )
     (; W, V, dΩ, node_wfz, point_node_fz, f) = workspace
 
-    node_u  = uz.x[1]     
+    num_layer = 4 # maybe this should be input?
+
+    node_u  = uz.x[1] # modifies in place 
     node_du = duz.x[1]  
 
-    node_node_z  = uz.x[2]
-    node_node_dz = duz.x[2]
-
     n_nodes = length(node_u)
-    num_layer = 1 # maybe this should be input?
+    node_node_last_z = uz.x[num_layer + 1]
 
     # Interpolation of the z_L from nodes to quadratures
     for i in 1:n_nodes
-        node_z = view(node_node_z, :, i)
+        node_z = view(node_node_last_z, :, i)
         disc_Ω = GT.discrete_field(V, node_z)
         z_faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
         qp = 0  
@@ -137,14 +132,34 @@ function rhs_delayed!(
         end
         node_du[i] -= node_u[i]
     end
+
     node_x = GT.node_coordinates(V)
+    node_node_dz1 = duz.x[2]
+    node_node_z1 = uz.x[2]
+
+    #for the first layer 
     for i in 1:n_nodes #iterating column by column 
         for j in 1:n_nodes
             node_i = node_x[i]
             node_j = node_x[j]
-            node_node_dz[j,i] = α(node_i, node_j, num_layer) *(node_u[j] - node_node_z[j,i]) 
-        end     
-    end   
+            node_node_dz1[j,i] = α(node_i, node_j, num_layer) *(node_u[j] - node_node_z1[j,i]) 
+        end
+    end
+    
+     
+    # for all other layers
+    for layer in 2:num_layer
+        node_node_dzn = duz.x[layer+1] #indeks switched by 1 because of the u
+        node_node_z1 = uz.x[layer]
+        node_node_z2 = uz.x[layer+1]
+        for i in 1:n_nodes #iterating column by column 
+            for j in 1:n_nodes
+                node_i = node_x[i]
+                node_j = node_x[j]
+                node_node_dzn[j,i] = α(node_i, node_j, num_layer) *(node_node_z1[j,i] - node_node_z2[j,i]) 
+            end     
+        end
+    end  
 end
 
 
