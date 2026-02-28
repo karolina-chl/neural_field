@@ -78,8 +78,8 @@ function main(G_params, S_params, params)
         fn = "solution.mp4"
         integrator = DE.init(ode, DE.Tsit5())
         prog = PM.ProgressThresh(0.0)
-        Makie.record(fig,fn,DE.tuples(integrator);framerate=10) do (node_u,t)
-            node_u = uz_array.x[1] 
+        Makie.record(fig,fn,DE.tuples(integrator);framerate=10) do (uz,t)
+            node_u = uz.x[1] 
             sc.color = GT.discrete_field(V,node_u)
             PM.update!(prog,T-t)
         end

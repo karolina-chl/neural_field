@@ -33,7 +33,7 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 400, 
+    simulation_time = 100, 
     time_step = 1 # not used yet
 )
 

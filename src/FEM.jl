@@ -95,7 +95,7 @@ function rhs!(node_du,node_u,p,t;workspace)
 end
 
 function z_initial(num_layer, dim_u)
-    return [ones(dim_u,dim_u) for _ in 1:num_layer] 
+    return [zeros(dim_u,dim_u) for _ in 1:num_layer] 
 end 
 
 function rhs_delayed!(
