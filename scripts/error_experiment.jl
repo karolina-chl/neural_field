@@ -35,7 +35,7 @@ G_params = (;
 S_params = (
     simulation_time = 10, 
     solution_time_step = 5,
-    save_time_step = 5 
+    save_time_step = [10] # if you want to save only last timestep T, just insert [T]
 )
 
 params = ( # not used yet

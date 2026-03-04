@@ -126,8 +126,8 @@ function rhs_delayed!(
             for z_point in GT.each_point(z_face)
                 qp += 1
                 point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
-                point_node_fz[qp, i] = f(point_node_z) #consider removing the matrix point_node_fz
-                node_du[i] +=  W[i,qp]*point_node_fz[qp, i]
+                fz = f(point_node_z) #consider removing the matrix point_node_fz
+                node_du[i] +=  W[i,qp]*fz
             end
         end
         node_du[i] -= node_u[i]

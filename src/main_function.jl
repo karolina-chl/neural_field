@@ -52,7 +52,7 @@ function main(G_params, S_params, params)
     n_points = size(W,2) 
     node_wfz = similar(node_x, Float64) 
     point_node_fz = zeros(n_points, n_nodes) # use similar like before?
-    workspace = (;W,V,dΩ,node_wfz,point_node_fz, f)
+    workspace = (;W,V,dΩ,node_wfz,point_node_fz, f) # delete node_wfz,point_node_fz,
 
     #ODE solution
     T = S_params.simulation_time
@@ -61,14 +61,32 @@ function main(G_params, S_params, params)
         rhs_delayed!(args...;workspace)
     end
 
-    ode_solution = DE.solve(ode,DE.Tsit5();saveat=0.01) #saves every 0.01 time units
+    dt = S_params.solution_time_step
+    save_dt = S_params.save_time_step
+
+    if isnothing(save_dt)
+        ode_solution = DE.solve(ode,DE.Tsit5(); adaptive=false, dt=dt)
+    else
+        ode_solution = DE.solve(ode,DE.Tsit5();saveat=save_dt, adaptive=false, dt=dt)
+    end
 
     #save the data
+    state_uz = ode_solution.u
+    timesteps = ode_solution.t
+
+    ode_solution_extracted = Dict(
+        "t" => timesteps, 
+        "u" => [state_uz[t].x[1] for t in 1:length(timesteps)],
+        "z" => [state_uz[t].x[2:num_layer+1] for t in 1:length(timesteps)] # do I need this?
+    )
+
     if params.save_data
         open("data/solution.json", "w") do io
-            JSON.json(io, ode_solution)
+            JSON.json(io, ode_solution_extracted)
         end
     end 
+
+    print("Solution saved to JSON")
 
     #plot the solution and save as mp3
     if params.post_processing.movie
