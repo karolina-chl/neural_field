@@ -73,6 +73,7 @@ function main(G_params, S_params, params)
     #save the data
     state_uz = ode_solution.u
     timesteps = ode_solution.t
+    file_name = params.datafile_name
 
     ode_solution_extracted = Dict(
         "t" => timesteps, 
@@ -81,7 +82,7 @@ function main(G_params, S_params, params)
     )
 
     if params.save_data
-        open("data/solution.json", "w") do io
+        open("data/exp_raw/$file_name", "w") do io
             JSON.json(io, ode_solution_extracted)
         end
     end 
