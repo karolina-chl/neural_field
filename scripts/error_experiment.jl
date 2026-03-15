@@ -67,7 +67,7 @@ function integral_mesh(G_params)
     return V, dΩ
 end
 
-mesh_size_testset = (7)
+mesh_size_testset = (10)
 results = Dict()
 
 for size in mesh_size_testset

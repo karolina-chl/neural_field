@@ -1,6 +1,6 @@
 using DrWatson
 import GalerkinToolkit as GT
-import GLMakie as Makie
+#import GLMakie as Makie
 import DifferentialEquations as DE
 import ProgressMeter as PM
 import JSON
@@ -16,8 +16,8 @@ function main(G_params, S_params, params)
     R = G_params.Ω.Ω_args.R
     build_Ω = G_params.Ω.build_Ω
 
-    axis = (aspect = Makie.DataAspect(),)
-    colormap=:viridis
+    # axis = (aspect = Makie.DataAspect(),)
+    # colormap=:viridis
     mesh = GT.with_gmsh(gmsh -> build_Ω(gmsh, mesh_size, R))
     Ω = GT.interior(mesh)
 
