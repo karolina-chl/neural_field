@@ -35,7 +35,7 @@ make_G_params(mesh_size) = (;
 
 S_params = (
     simulation_time = 400, 
-    solution_time_step = 1,
+    solution_time_step = 0.1,
     save_time_step = [400] # if you want to save only last timestep T, just insert [T]
 )
 
