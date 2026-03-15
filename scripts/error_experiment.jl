@@ -21,7 +21,7 @@ make_G_params(mesh_size) = (;
     state_initialization = (
         initialize_u = φ,
         initialize_z = z_initial,
-        num_layer = 1
+        num_layer = 4
         ),
     synaptic_matrix = (
         w = w, 
