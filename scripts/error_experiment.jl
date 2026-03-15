@@ -87,7 +87,7 @@ end
 
 # save the file with final results 
     open("data/exp_raw/final-results", "w") do io
-        JSON.json(io, results; allownan=true)
+        JSON.json(io, results)
     end
 
 

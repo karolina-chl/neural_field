@@ -83,7 +83,7 @@ function main(G_params, S_params, params)
 
     if params.save_data
         open("data/exp_raw/$file_name", "w") do io
-            JSON.json(io, ode_solution_extracted; allownan=true)
+            JSON.json(io, ode_solution_extracted) 
         end
     end 
 
