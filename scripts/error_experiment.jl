@@ -34,9 +34,9 @@ make_G_params(mesh_size) = (;
     )    
 
 S_params = (
-    simulation_time = 10, 
-    solution_time_step = 5,
-    save_time_step = [10] # if you want to save only last timestep T, just insert [T]
+    simulation_time = 400, 
+    solution_time_step = 1,
+    save_time_step = [400] # if you want to save only last timestep T, just insert [T]
 )
 
 make_params(datafile_name) = ( 
@@ -67,7 +67,7 @@ function integral_mesh(G_params)
     return V, dΩ
 end
 
-mesh_size_testset = (10)
+mesh_size_testset = (10,9,8,7,6,5,4,3,2,1,1/2,1/4)
 results = Dict()
 
 for size in mesh_size_testset
