@@ -69,6 +69,7 @@ results = Dict()
 
 for t in timesteps
     params = make_params("data_time_$t")
+    S_params = make_S_params(solution_time_step)
     main(G_params, S_params, params)
 
     V, dΩ = integral_mesh(G_params)
