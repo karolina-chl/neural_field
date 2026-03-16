@@ -1,4 +1,5 @@
 using DrWatson
+using JSON
 import GalerkinToolkit as GT
 
 @quickactivate "neural_field"
@@ -48,28 +49,31 @@ make_params(datafile_name) = (
     datafile_name = datafile_name
 )
 
-### Create a mesh
-mesh_size = G_params.Ω.Ω_args.mesh_size
-R = G_params.Ω.Ω_args.R
-build_Ω = G_params.Ω.build_Ω
+function integral_mesh(G_params)
+    ### Create a mesh
+    mesh_size = G_params.Ω.Ω_args.mesh_size
+    R = G_params.Ω.Ω_args.R
+    build_Ω = G_params.Ω.build_Ω
 
-mesh = GT.with_gmsh(gmsh -> build_Ω(gmsh, mesh_size, R))
-Ω = GT.interior(mesh)
+    mesh = GT.with_gmsh(gmsh -> build_Ω(gmsh, mesh_size, R))
+    Ω = GT.interior(mesh)
 
-### Finite element interpolation
-interpolation_degree = G_params.other.interpolation_degree
-V = GT.lagrange_space(Ω,interpolation_degree)
+    ### Finite element interpolation
+    interpolation_degree = G_params.other.interpolation_degree
+    V = GT.lagrange_space(Ω,interpolation_degree)
 
-### Numerical integration 
-integration_degree = G_params.other.integration_degree
-dΩ = GT.quadrature(Ω,integration_degree)
+    ### Numerical integration 
+    integration_degree = G_params.other.integration_degree
+    dΩ = GT.quadrature(Ω,integration_degree)
+    return V, dΩ
+end
 
-timesteps = (0.008, 0.003, 0.001)
+timesteps = (0.0125, 0.00625, 0.003125)
 results = Dict()
 
 for t in timesteps
     params = make_params("data_time_$t")
-    S_params = make_S_params(solution_time_step)
+    S_params = make_S_params(t)
     main(G_params, S_params, params)
 
     V, dΩ = integral_mesh(G_params)
