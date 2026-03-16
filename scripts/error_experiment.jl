@@ -34,9 +34,9 @@ make_G_params(mesh_size) = (;
     )    
 
 S_params = (
-    simulation_time = 400, 
+    simulation_time = 100, 
     solution_time_step = 0.1,
-    save_time_step = [400] # if you want to save only last timestep T, just insert [T]
+    save_time_step = [100] # if you want to save only last timestep T, just insert [T]
 )
 
 make_params(datafile_name) = ( 
@@ -82,12 +82,11 @@ for size in mesh_size_testset
     uh = GT.solution_field(V,u_final_state)
     integral = GT.∫(x -> abs(uh(x)),dΩ) |> sum 
     results["mesh_size: $size"] = integral
-end 
 
-
-# save the file with final results 
-    open("data/exp_raw/final-results", "w") do io
+    open("data/exp_raw/final-results$size", "w") do io
         JSON.json(io, results)
     end
+end
+    
 
 
