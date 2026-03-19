@@ -1,5 +1,4 @@
 using DrWatson
-using JSON
 import GalerkinToolkit as GT
 
 @quickactivate "neural_field"
@@ -8,10 +7,10 @@ include(srcdir("FEM.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 
-G_params = (;
+make_G_params(mesh_size) = (;
     Ω = (
         build_Ω = circle_mesh, 
-        Ω_args = (mesh_size = 3, R = 30)
+        Ω_args = (mesh_size = mesh_size, R = 30)
         ),
     firing_function = (;
         f = f
@@ -34,9 +33,9 @@ G_params = (;
         )
     )    
 
-make_S_params(solution_time_step) = (
+S_params = (
     simulation_time = 100, 
-    solution_time_step = solution_time_step,
+    solution_time_step = 0.1,
     save_time_step = [100] # if you want to save only last timestep T, just insert [T]
 )
 
@@ -68,23 +67,26 @@ function integral_mesh(G_params)
     return V, dΩ
 end
 
-timesteps = (0.8, 0.4, 0.2)
+mesh_size_testset = (7,6,5,4,3,2,1,1/2)
 results = Dict()
 
-for t in timesteps
-    params = make_params("data_time_$t")
-    S_params = make_S_params(t)
+for size in mesh_size_testset
+    G_params = make_G_params(size)
+    params = make_params("data_$size")
     main(G_params, S_params, params)
 
     V, dΩ = integral_mesh(G_params)
-    data = JSON.parsefile("data/exp_raw/data_time_$t")
+    data = JSON.parsefile("data/exp_raw/data_$size")
     u_final_state = Float64.(data.u[1])
 
     uh = GT.solution_field(V,u_final_state)
     integral = GT.∫(x -> abs(uh(x)),dΩ) |> sum 
-    results["timestep: $t"] = integral
+    results["mesh_size: $size"] = integral
 
-    open("data/exp_raw/final-results_time_$t", "w") do io
+    open("data/exp_raw/final-results$size", "w") do io
         JSON.json(io, results)
     end
 end
+    
+
+

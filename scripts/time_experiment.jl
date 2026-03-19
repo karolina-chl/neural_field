@@ -68,7 +68,7 @@ function integral_mesh(G_params)
     return V, dΩ
 end
 
-timesteps = (0.0125, 0.00625, 0.003125)
+timesteps = (0.8, 0.4, 0.2, 0.1, 0.05, 0.025, 0.0125, 0.00625, 0.003125)
 results = Dict()
 
 for t in timesteps

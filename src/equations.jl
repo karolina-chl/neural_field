@@ -3,39 +3,45 @@ All equations used in the neural field model are defined in this file
 """
 
 using LinearAlgebra
+using SpecialFunctions
+import GLMakie as Makie
 
 function w(x,y)
     WAε(norm(x-y))
 end
 
 function f(u)
-    μ=5.5
     θ=5.6
-    1/(1+exp(-μ*u+θ)) - 1/(1+exp(θ))
+    α=10
+    V=1
+    ϕ(α*(u-θ)/sqrt(1+α^2*V))
 end
 
+function ϕ(x)
+    1/2*[1+erf(x/sqrt(2))]
+end    
+
 function φ(r;)
-    α=20
+    α=5
     β=1/α
     α / (cosh(β*norm(r)))^2
 end
     
 function A(x)
-    b=0.4
+    b = 0.4
     exp(-b*x)*(b*sin(x)+cos(x))
 end
 
 function WAε(x)
-    ε=1.0e-3    
-    Ax = A(x)
+    ε=0.05
+    Ax=A(x)
     abs(Ax) >= ε ? Ax : zero(Ax)
 end
 
 function τ(x,y) 
-    #this function accepts node coordinates 
-    τ_0 = 0.5
-    τ_1 = 0.01
-    diff = (x .- y).^2
+    τ_0=0.1
+    τ_1=0.01 
+    diff=(x .- y).^2
     distance_xy = sqrt(sum(diff))
     τ_0 + τ_1*distance_xy
 end 
@@ -44,3 +50,17 @@ function α(x,y, num_layer)
     #this function accepts node coordinates
     num_layer/τ(x,y)
 end
+
+function one_layer(dim_u)
+    z_layer=zeros(dim_u,dim_u) 
+    for i in 1:dim_u
+        for j in 1:dim_u
+            z_layer[i,j] = 0.1* φ(i)*φ(j)
+        end 
+    end
+    return z_layer           
+end     
+
+function z_initial(num_layer, dim_u)
+    return [one_layer(dim_u) for _ in 1:num_layer] 
+end 

@@ -3,11 +3,15 @@ Functions needed for FEM method
 """
 
 import GalerkinToolkit as GT
-#import GLMakie as Makie
+import GLMakie as Makie
 using RecursiveArrayTools
 import Gmsh
 
 include("equations.jl")
+
+function one_d_mesh(L, num_el) 
+    GT.cartesian_mesh((-L, L),(num_el,))
+end    
 
 function circle_mesh(gmsh, mesh_size, R)
     dim = 2
@@ -93,10 +97,6 @@ function rhs!(node_du,node_u,p,t;workspace)
     mul!(node_wfu,W,point_fu)
     node_du .= node_wfu .- node_u
 end
-
-function z_initial(num_layer, dim_u)
-    return [zeros(dim_u,dim_u) for _ in 1:num_layer] 
-end 
 
 function rhs_delayed!(
     duz,
