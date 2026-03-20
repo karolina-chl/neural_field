@@ -33,9 +33,9 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 30, 
+    simulation_time = 50, 
     solution_time_step = nothing,
-    save_time_step = [0,20]
+    save_time_step = [0,50]
 )
 
 L = G_params.Ω.Ω_args.L
