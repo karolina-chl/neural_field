@@ -1,6 +1,6 @@
 using DrWatson
 import GalerkinToolkit as GT
-import GLMakie as Makie
+#import GLMakie as Makie
 import DifferentialEquations as DE
 import ProgressMeter as PM
 import JSON

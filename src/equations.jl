@@ -4,7 +4,6 @@ All equations used in the neural field model are defined in this file
 
 using LinearAlgebra
 using SpecialFunctions
-import GLMakie as Makie
 
 function w(x,y)
     WAε(norm(x-y))

@@ -9,7 +9,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 15, num_el = 200)
+        Ω_args = (L = 20, num_el = 400)
         ),
     firing_function = (;
         f = f
