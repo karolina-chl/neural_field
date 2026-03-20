@@ -18,7 +18,7 @@ function f(u)
 end
 
 function ϕ(x)
-    1/2*[1+erf(x/sqrt(2))]
+    1/2*(1+erf(x/sqrt(2)))
 end    
 
 function φ(r;)

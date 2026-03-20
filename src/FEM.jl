@@ -10,7 +10,7 @@ import Gmsh
 include("equations.jl")
 
 function one_d_mesh(L, num_el) 
-    GT.cartesian_mesh((-L, L),(num_el,))
+    return GT.cartesian_mesh((-L, L),(num_el,))
 end    
 
 function circle_mesh(gmsh, mesh_size, R)
@@ -142,7 +142,7 @@ function rhs_delayed!(
         for j in 1:n_nodes
             node_i = node_x[i]
             node_j = node_x[j]
-            node_node_dz1[j,i] = α(node_i, node_j, num_layer) *(node_u[j] - node_node_z1[j,i]) 
+            node_node_dz1[j,i] = α(node_i, node_j, num_layer)*(node_u[j] - node_node_z1[j,i]) 
         end
     end
     
