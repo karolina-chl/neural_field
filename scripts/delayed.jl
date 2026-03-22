@@ -9,7 +9,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 20, num_el = 400)
+        Ω_args = (L = 15, num_el = 300)
         ),
     firing_function = (;
         f = f
@@ -35,7 +35,7 @@ G_params = (;
 S_params = (
     simulation_time = 50, 
     solution_time_step = nothing,
-    save_time_step = [0,50]
+    save_time_step = []
 )
 
 L = G_params.Ω.Ω_args.L
@@ -48,8 +48,10 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    datafile_name = "1D_data_L$(L)_num_el$(num_el)T$(simulation_time)"
+    datafile_name = "1D_data_newinitial_2203_L$(L)_num_el$(num_el)T$(simulation_time)_zcircle"
 )
+
 
 print("Executing the code")
 main(G_params, S_params, params)
+

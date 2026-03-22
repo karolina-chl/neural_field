@@ -105,7 +105,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, node_wfz, point_node_fz, f) = workspace
+    (; W, V, dΩ, f) = workspace
 
     num_layer = length(uz.x) - 1
 
@@ -126,7 +126,7 @@ function rhs_delayed!(
             for z_point in GT.each_point(z_face)
                 qp += 1
                 point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
-                fz = f(point_node_z) #consider removing the matrix point_node_fz
+                fz = f(point_node_z)
                 node_du[i] +=  W[i,qp]*fz
             end
         end
@@ -146,7 +146,6 @@ function rhs_delayed!(
         end
     end
     
-     
     # for all other layers
     for layer in 2:num_layer
         node_node_dzn = duz.x[layer+1] #indeks switched by 1 because of the u

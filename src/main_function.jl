@@ -19,21 +19,17 @@ function main(G_params, S_params, params)
     # mesh = GT.with_gmsh(gmsh -> build_Ω(gmsh, mesh_size, R))
     # Ω = GT.interior(mesh)
 
-    print("Create a mesh")
-
     L = G_params.Ω.Ω_args.L
     num_el = G_params.Ω.Ω_args.num_el
     
     mesh = one_d_mesh(L, num_el)
     Ω = GT.interior(mesh)
 
-    print("Finite element interpolation")
     ### Finite element interpolation
     interpolation_degree = G_params.other.interpolation_degree
     V = GT.lagrange_space(Ω,interpolation_degree)
     node_x = GT.node_coordinates(V)
 
-    print("Initial conditions")
     ### Initial conditions
     initialize_u = G_params.state_initialization.initialize_u
     initialize_z = G_params.state_initialization.initialize_z
@@ -43,29 +39,27 @@ function main(G_params, S_params, params)
     dim_u = length(node_u)
     all_z = initialize_z(num_layer, dim_u)
 
-    print("Numerical integration")
+    
     ### Numerical integration 
     integration_degree = G_params.other.integration_degree
     dΩ = GT.quadrature(Ω,integration_degree)
 
-    print("Synaptic matrix")
     ### Synaptic matrix
     synaptic_builder = G_params.synaptic_matrix.synaptic_builder
     w = G_params.synaptic_matrix.w
 
     W = synaptic_builder(V,dΩ,w) 
     
-    print("ODE right-hand-side")
+    
     #ODE right-hand-side
     f = G_params.firing_function.f
 
-    n_nodes = length(node_u)
-    n_points = size(W,2) 
-    node_wfz = similar(node_x, Float64) 
-    point_node_fz = zeros(n_points, n_nodes) # use similar like before?
-    workspace = (;W,V,dΩ,node_wfz,point_node_fz, f) # delete node_wfz,point_node_fz,
+    # n_nodes = length(node_u)
+    # n_points = size(W,2) 
+    #node_wfz = similar(node_x, Float64) 
+    #point_node_fz = zeros(n_points, n_nodes) # use similar like before?
+    workspace = (;W,V,dΩ,f) # delete node_wfz,point_node_fz,
 
-    print("ODE solution")
     #ODE solution
     T = S_params.simulation_time
     uz_array = ArrayPartition(node_u, all_z...) # three dots to treat matrix separate
@@ -75,15 +69,11 @@ function main(G_params, S_params, params)
 
     save_dt = S_params.save_time_step
 
-    print("Starting the solving...")
-
     if isnothing(save_dt)
         ode_solution = DE.solve(ode,DE.Tsit5())
     else
         ode_solution = DE.solve(ode,DE.Tsit5();saveat=save_dt)
     end
-
-    print("Solved. Saving process starts...")
 
     #save the data
     state_uz = ode_solution.u
