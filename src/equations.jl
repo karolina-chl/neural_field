@@ -80,7 +80,7 @@ end
 #     return [copy(z0) for _ in 1:num_layer]
 # end
 
-function one_layer(dim_u; A=6.2, σ=60)
+function one_layer(dim_u; A=6.2, σ=100)
     c = (dim_u + 1) / 2
     Z = zeros(dim_u, dim_u)
     for i in 1:dim_u
