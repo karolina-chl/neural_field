@@ -105,7 +105,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, f) = workspace
+    (; W, V, dΩ, f, M_τ_s) = workspace
 
     num_layer = length(uz.x) - 1
 
@@ -138,11 +138,9 @@ function rhs_delayed!(
     node_node_z1 = uz.x[2]
 
     #for the first layer 
-    for i in 1:n_nodes #iterating column by column 
+    for i in 1:n_nodes # iterating column by column 
         for j in 1:n_nodes
-            node_i = node_x[i]
-            node_j = node_x[j]
-            node_node_dz1[j,i] = α(node_i, node_j, num_layer)*(node_u[j] - node_node_z1[j,i]) 
+            node_node_dz1[j,i] = (num_layer/M_τ_s[j,i])*(node_u[j] - node_node_z1[j,i]) 
         end
     end
     
@@ -153,9 +151,7 @@ function rhs_delayed!(
         node_node_z2 = uz.x[layer+1]
         for i in 1:n_nodes #iterating column by column 
             for j in 1:n_nodes
-                node_i = node_x[i]
-                node_j = node_x[j]
-                node_node_dzn[j,i] = α(node_i, node_j, num_layer) *(node_node_z1[j,i] - node_node_z2[j,i]) 
+                node_node_dzn[j,i] = (num_layer/M_τ_s[j,i])*(node_node_z1[j,i] - node_node_z2[j,i]) 
             end     
         end
     end  

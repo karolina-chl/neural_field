@@ -9,7 +9,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 30, num_el = 500)
+        Ω_args = (L = 15, num_el = 100)
         ),
     firing_function = (;
         f = f
@@ -20,7 +20,8 @@ G_params = (;
     state_initialization = (
         initialize_u = φ,
         initialize_z = z_initial,
-        num_layer = 2
+        num_layer = 2,
+        delay_function = compute_delay_matrix
         ),
     synaptic_matrix = (
         w = w, 
@@ -35,7 +36,7 @@ G_params = (;
 S_params = (
     simulation_time = 50, 
     solution_time_step = nothing,
-    save_time_step = []
+    save_time_step = 1
 )
 
 L = G_params.Ω.Ω_args.L
@@ -48,7 +49,7 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    datafile_name = "1D_data_newinitial_2203_L$(L)_num_el$(num_el)T$(simulation_time)_zcircle"
+    datafile_name = "1D_data_newinitial_2403_L$(L)_num_el$(num_el)T$(simulation_time)_danielez"
 )
 
 

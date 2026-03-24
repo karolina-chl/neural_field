@@ -36,10 +36,10 @@ function main(G_params, S_params, params)
     num_layer = G_params.state_initialization.num_layer
 
     node_u = initialize_u.(node_x)
-    dim_u = length(node_u)
-    all_z = initialize_z(num_layer, dim_u)
 
-    
+    x = range(-L, L, num_el + 1) #this is not robust, should use node_x
+    all_z = initialize_z(x,num_layer)
+
     ### Numerical integration 
     integration_degree = G_params.other.integration_degree
     dΩ = GT.quadrature(Ω,integration_degree)
@@ -50,15 +50,13 @@ function main(G_params, S_params, params)
 
     W = synaptic_builder(V,dΩ,w) 
     
-    
     #ODE right-hand-side
     f = G_params.firing_function.f
+    delay_function = G_params.state_initialization.delay_function
+    τ_s_fun(x, τs0, τs1) = τs0 * (1 + τs1*abs(x))
 
-    # n_nodes = length(node_u)
-    # n_points = size(W,2) 
-    #node_wfz = similar(node_x, Float64) 
-    #point_node_fz = zeros(n_points, n_nodes) # use similar like before?
-    workspace = (;W,V,dΩ,f) # delete node_wfz,point_node_fz,
+    M_τ_s = delay_function(x,x-> τ_s_fun(x, 0.1, 0.01))
+    workspace = (;W,V,dΩ,f,M_τ_s)
 
     #ODE solution
     T = S_params.simulation_time

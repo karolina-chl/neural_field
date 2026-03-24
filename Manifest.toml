@@ -2,7 +2,7 @@
 
 julia_version = "1.12.4"
 manifest_format = "2.0"
-project_hash = "a6b872681f3351cb61f116ca40bb7277ba300301"
+project_hash = "656961b0da4dd22878697d10f9190306cfe0e5b9"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -751,7 +751,7 @@ uuid = "411431e0-e8b7-467b-b5e0-f676ba4f2910"
 version = "0.1.6"
 
 [[deps.FFMPEG_jll]]
-deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers", "LAME_jll", "Libdl", "Ogg_jll", "OpenSSL_jll", "Opus_jll", "PCRE2_jll", "Zlib_jll", "libaom_jll", "libass_jll", "libfdk_aac_jll", "libvorbis_jll", "x264_jll", "x265_jll"]
+deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers", "LAME_jll", "Libdl", "Ogg_jll", "OpenSSL_jll", "Opus_jll", "PCRE2_jll", "Zlib_jll", "libaom_jll", "libass_jll", "libfdk_aac_jll", "libva_jll", "libvorbis_jll", "x264_jll", "x265_jll"]
 git-tree-sha1 = "01ba9d15e9eae375dc1eb9589df76b3572acd3f2"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "8.0.1+0"
@@ -1498,6 +1498,18 @@ git-tree-sha1 = "71e8ee0f9fe0e86a8f8c7f28361e5118eab2f93f"
 uuid = "18c40d15-f7cd-5a6d-bc92-87468d86c5db"
 version = "5.0.0+0"
 
+[[deps.LinearMaps]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "7f6be2e4cdaaf558623d93113d6ddade7b916209"
+uuid = "7a12625a-238d-50fd-b39a-03d52299707e"
+version = "3.11.4"
+weakdeps = ["ChainRulesCore", "SparseArrays", "Statistics"]
+
+    [deps.LinearMaps.extensions]
+    LinearMapsChainRulesCoreExt = "ChainRulesCore"
+    LinearMapsSparseArraysExt = "SparseArrays"
+    LinearMapsStatisticsExt = "Statistics"
+
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "OpenBLAS_jll", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLLogging", "SciMLOperators", "Setfield", "StaticArraysCore"]
 git-tree-sha1 = "1fdeafa25801ec2e0caa88fbe0afd7c41d3d087a"
@@ -1666,6 +1678,12 @@ deps = ["AbstractTrees", "Automa", "DataStructures", "FreeTypeAbstraction", "Geo
 git-tree-sha1 = "7eb8cdaa6f0e8081616367c10b31b9d9b34bb02a"
 uuid = "0a4f8689-d25c-4efe-a92b-7142dfc1aa53"
 version = "0.6.7"
+
+[[deps.MatrixEquations]]
+deps = ["LinearAlgebra", "LinearMaps"]
+git-tree-sha1 = "51f3fade0b4ff2cf90b36b3312425460631abb56"
+uuid = "99c1a7ee-ab34-5fd5-8076-27c950a045f4"
+version = "2.5.6"
 
 [[deps.MatrixFactorizations]]
 deps = ["ArrayLayouts", "LinearAlgebra", "Printf", "Random"]
@@ -3177,6 +3195,12 @@ git-tree-sha1 = "9bf7903af251d2050b467f76bdbe57ce541f7f4f"
 uuid = "1183f4f0-6f2a-5f1a-908b-139f9cdfea6f"
 version = "0.2.2+0"
 
+[[deps.libdrm_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libpciaccess_jll"]
+git-tree-sha1 = "63aac0bcb0b582e11bad965cef4a689905456c03"
+uuid = "8e53e030-5e6c-5a89-a30b-be5b7263a166"
+version = "2.4.125+1"
+
 [[deps.libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "646634dd19587a56ee2f1199563ec056c5f228df"
@@ -3194,6 +3218,12 @@ deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "libpng_jll"]
 git-tree-sha1 = "c1733e347283df07689d71d61e14be986e49e47a"
 uuid = "075b6546-f08a-558a-be8f-8157d0f608a5"
 version = "1.10.5+0"
+
+[[deps.libva_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll", "Xorg_libXext_jll", "Xorg_libXfixes_jll", "libdrm_jll"]
+git-tree-sha1 = "7dbf96baae3310fe2fa0df0ccbb3c6288d5816c9"
+uuid = "9a156e7d-b971-5f62-b2c9-67348b8fb97c"
+version = "2.23.0+0"
 
 [[deps.libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll"]

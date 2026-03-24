@@ -4,6 +4,7 @@ All equations used in the neural field model are defined in this file
 
 using LinearAlgebra
 using SpecialFunctions
+using MatrixEquations
 
 function w(x,y)
     WAε(norm(x-y))
@@ -37,63 +38,88 @@ function WAε(x)
     abs(Ax) >= ε ? Ax : zero(Ax)
 end
 
-function τ(x,y) 
-    τ_0=0.1
-    τ_1=0.01 
-    diff=(x .- y).^2
-    distance_xy = sqrt(sum(diff))
-    τ_0 + τ_1*distance_xy
-end 
-
-function α(x,y, num_layer)
-    #this function accepts node coordinates
-    num_layer/τ(x,y)
-end
-
-# function one_layer(dim_u)
-#     z_layer=zeros(dim_u,dim_u) 
-#     for i in 1:dim_u
-#         for j in 1:dim_u
-#             z_layer[i,j] = 0.1* φ(i)*φ(j)
-#         end 
-#     end
-#     return z_layer           
-# end  
-
-# function one_layer(dim_u)
-#     xs = range(-(dim_u-1)/2, (dim_u-1)/2; length=dim_u)
-#     v = [φ(x) for x in xs]
-#     return 0.1 .* (v * v')
-# end
-
-# function z_initial(num_layer, dim_u)
-#     return [one_layer(dim_u) for _ in 1:num_layer] 
+# function τ(x,y) 
+#     τ_0=0.1
+#     τ_1=0.01 
+#     diff=(x .- y).^2
+#     distance_xy = sqrt(sum(diff))
+#     τ_0 + τ_1*distance_xy
 # end 
 
-# function one_layer(node_u)
-#     n = length(node_u)
-#     repeat(reshape(node_u, n, 1), 1, n)
+# function α(x,y, num_layer)
+#     #this function accepts node coordinates
+#     num_layer/τ(x,y)
 # end
 
-# function z_initial(num_layer, node_u)
-#     z0 = one_layer(node_u)
-#     return [copy(z0) for _ in 1:num_layer]
-# end
+### Daniele functions
 
-function one_layer(dim_u; A=6.2, σ=100)
-    c = (dim_u + 1) / 2
-    Z = zeros(dim_u, dim_u)
-    for i in 1:dim_u
-        for j in 1:dim_u
-            r2 = (i - c)^2 + (j - c)^2
-            Z[j, i] = A * exp(-r2 / (2σ^2))
-        end
+τ_s_fun(x, τs0, τs1) = τs0 * (1 + τs1*abs(x))
+
+function compute_delay_matrix(x, τ_s_fun)
+
+  n = length(x)
+  M_τ_s = zeros(n, n)
+
+  y_τ_s = τ_s_fun.(x)
+
+  i_rows = 1:n
+  i_shift = -(n ÷ 2):(n ÷ 2)
+
+  for i in 1:n
+    M_τ_s[i_rows[i], :] = circshift(y_τ_s, i_shift[i])
+  end
+
+  return M_τ_s
+end
+
+function compute_equilibrium_variance(τ_u, M_τ_s, σ_u, σ_s1, σ_s2)
+
+  # Parameters
+  n = size(M_τ_s, 1)
+  ξ_u = 1/τ_u
+
+  # Allocate matrices
+  A = zeros(3, 3)
+  C_σ = similar(A)
+  X = similar(A)
+  V_star = similar(M_τ_s)
+
+  # For each spatial point
+  for j in 1:n
+    for i in 1:n 
+      
+      # Form matrices
+      ξ_s = 1/M_τ_s[i,j]
+
+      B = [-ξ_u     0     0;
+            ξ_s  -ξ_s     0;
+              0   ξ_s  -ξ_s]
+
+      Λ = [σ_u^2       0      0;
+               0  σ_s1^2      0;
+               0       0 σ_s2^2]
+
+      # Solve the Sylvester equation and store result
+      X = sylvc(-B, -B', Λ)
+      V_star[i,j] = X[1,1]
+
     end
-    return Z
+  end
+  
+  return V_star
 end
 
-function z_initial(num_layer, dim_u)
-    z0 = one_layer(dim_u)
-    [copy(z0) for _ in 1:num_layer]
-end
+### Initialize z like Daniele 
+function z_initial(x,num_layer)
+    τs0 = 0.1
+    τs1 = 0.01
+    τ = 1
+    σu = √(2 * 0.06) # 1.0 
+    σs1 = √(2 * 0.06) # 1.0 
+    σs2 = √(2 * 0.06) # 1.0 
 
+    M_τ = compute_delay_matrix(x, x -> τ_s_fun(x, τs0, τs1))
+    V_s = compute_equilibrium_variance(τ, M_τ, σu, σs1, σs2)
+    z0 = V_s
+    return [copy(z0) for _ in 1:num_layer]
+end     

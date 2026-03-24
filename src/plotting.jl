@@ -50,8 +50,8 @@ function visualize_z(datafile)
     save("z_final.png",fig)
 end 
 
-#visualize_first_and_last("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle", 30)
-#visualize_U_history("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle")
-visualize_z("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle")
+#visualize_first_and_last("data/exp_raw/1D_data_newinitial_2403_L15_num_el100T50_danielez", 15)
+visualize_U_history("data/exp_raw/1D_data_newinitial_2403_L15_num_el100T50_danielez")
+#visualize_z("data/exp_raw/1D_data_newinitial_2403_L15_num_el100T50_danielez")
 
 
