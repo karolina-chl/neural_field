@@ -96,7 +96,7 @@ function rhs!(node_du,node_u,p,t;workspace)
     end
     mul!(node_wfu,W,point_fu)
     node_du .= node_wfu .- node_u
-end
+end    
 
 function rhs_delayed!(
     duz,
@@ -105,7 +105,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, f) = workspace
+    (; W, V, dΩ, f, delay_matrix) = workspace
 
     num_layer = length(uz.x) - 1
 

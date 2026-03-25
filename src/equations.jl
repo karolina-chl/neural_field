@@ -10,9 +10,9 @@ function w(x,y)
 end
 
 function f(u)
-    θ=5.6
+    θ=0.9
     α=10
-    V=1
+    V=0.1
     ϕ(α*(u-θ)/sqrt(1+α^2*V))
 end
 
@@ -22,8 +22,8 @@ end
 
 function φ(r;)
     α=5
-    β=1/α
-    α / (cosh(β*norm(r)))^2
+    β=1/4
+    α / (cosh(β*norm(r)))
 end
     
 function A(x)
@@ -50,50 +50,22 @@ function α(x,y, num_layer)
     num_layer/τ(x,y)
 end
 
-# function one_layer(dim_u)
-#     z_layer=zeros(dim_u,dim_u) 
-#     for i in 1:dim_u
-#         for j in 1:dim_u
-#             z_layer[i,j] = 0.1* φ(i)*φ(j)
-#         end 
-#     end
-#     return z_layer           
-# end  
-
-# function one_layer(dim_u)
-#     xs = range(-(dim_u-1)/2, (dim_u-1)/2; length=dim_u)
-#     v = [φ(x) for x in xs]
-#     return 0.1 .* (v * v')
-# end
-
-# function z_initial(num_layer, dim_u)
-#     return [one_layer(dim_u) for _ in 1:num_layer] 
-# end 
-
-# function one_layer(node_u)
-#     n = length(node_u)
-#     repeat(reshape(node_u, n, 1), 1, n)
-# end
-
-# function z_initial(num_layer, node_u)
-#     z0 = one_layer(node_u)
-#     return [copy(z0) for _ in 1:num_layer]
-# end
-
-function one_layer(dim_u; A=6.2, σ=100)
-    c = (dim_u + 1) / 2
-    Z = zeros(dim_u, dim_u)
+function one_layer(node_x)
+    dim_u=length(node_x)
+    z_layer=zeros(dim_u,dim_u) 
     for i in 1:dim_u
         for j in 1:dim_u
-            r2 = (i - c)^2 + (j - c)^2
-            Z[j, i] = A * exp(-r2 / (2σ^2))
-        end
+            z_layer[i,j] = 1* φ(node_x[i])*φ(node_x[j])
+        end 
     end
-    return Z
-end
+    return z_layer           
+end  
 
-function z_initial(num_layer, dim_u)
-    z0 = one_layer(dim_u)
+function z_initial(num_layer, node_x)
+    z0 = one_layer(node_x)
     [copy(z0) for _ in 1:num_layer]
 end
+
+
+
 

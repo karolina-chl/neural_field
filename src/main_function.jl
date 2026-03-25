@@ -1,6 +1,7 @@
 using DrWatson
 import GalerkinToolkit as GT
-#import GLMakie as Makie
+#using Makie
+using GLMakie
 import DifferentialEquations as DE
 import ProgressMeter as PM
 import JSON
@@ -36,8 +37,7 @@ function main(G_params, S_params, params)
     num_layer = G_params.state_initialization.num_layer
 
     node_u = initialize_u.(node_x)
-    dim_u = length(node_u)
-    all_z = initialize_z(num_layer, dim_u)
+    all_z = initialize_z(num_layer, node_x)
 
     
     ### Numerical integration 
@@ -53,20 +53,16 @@ function main(G_params, S_params, params)
     
     #ODE right-hand-side
     f = G_params.firing_function.f
+    workspace = (;W,V,dΩ,f)
 
-    # n_nodes = length(node_u)
-    # n_points = size(W,2) 
-    #node_wfz = similar(node_x, Float64) 
-    #point_node_fz = zeros(n_points, n_nodes) # use similar like before?
-    workspace = (;W,V,dΩ,f) # delete node_wfz,point_node_fz,
-
+    
     #ODE solution
     T = S_params.simulation_time
     uz_array = ArrayPartition(node_u, all_z...) # three dots to treat matrix separate
     ode = DE.ODEProblem(uz_array,[0,T]) do args...
         rhs_delayed!(args...;workspace)
     end
-
+    
     save_dt = S_params.save_time_step
 
     if isnothing(save_dt)

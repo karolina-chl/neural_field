@@ -14,7 +14,6 @@ function visualize_first_and_last(datafile, L)
 
     ax = Axis(
         fig[1,1],
-        yscale = log10,
         xlabel = "Mesh",
         ylabel = "U value", 
         title = "U - final and initial state"
@@ -33,7 +32,7 @@ function visualize_U_history(datafile)
 
     fig = Figure()
     ax = Axis(fig[1, 1], xlabel = "U mesh", ylabel = "Time")
-    hm = GLMakie.heatmap!(ax, u_matrix; colorscale = log10, colorrange = (1e-10, 5))
+    hm = GLMakie.heatmap!(ax, u_matrix)
     Colorbar(fig[1, 2], hm)
     save("U_history.png", fig)
 end
@@ -41,17 +40,25 @@ end
 function visualize_z(datafile)
     data = JSON.parsefile(datafile)
     z = data.z[51]
-    z_matrix = hcat(z[2]...)
+    z_matrix_1 = hcat(z[1]...)
+    z_matrix_2 = hcat(z[2]...)
 
-    fig = Figure()
-    ax = Axis(fig[1,1])
-    hm = GLMakie.heatmap!(ax, z_matrix)
-    Colorbar(fig[1,2], hm)
-    save("z_final.png",fig)
+    fig_1 = Figure()
+    ax_1 = Axis(fig_1[1,1])
+    hm_1 = GLMakie.heatmap!(ax_1, z_matrix_1)
+    Colorbar(fig_1[1,2], hm_1)
+    save("z1_final.png",fig_1)
+
+    fig_2 = Figure()
+    ax_2 = Axis(fig_2[1,1])
+    hm_2 = GLMakie.heatmap!(ax_2, z_matrix_2)
+    Colorbar(fig_2[1,2], hm_2)
+    save("z2_final.png",fig_2)
+
 end 
 
-#visualize_first_and_last("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle", 30)
-#visualize_U_history("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle")
-visualize_z("data/exp_raw/1D_data_newinitial_2203_L30_num_el500T50_zcircle")
+#visualize_first_and_last("data/exp_raw/time_testtime", 20)
+#visualize_U_history("data/exp_raw/1D_data_newinitial_2203_L30_num_el300T50_post")
+#visualize_z("data/exp_raw/1D_data_newinitial_2203_L30_num_el300T50_post")
 
 
