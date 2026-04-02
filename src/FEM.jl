@@ -105,7 +105,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, f, delay_matrix) = workspace
+    (; W, V, dΩ, f) = workspace
 
     num_layer = length(uz.x) - 1
 

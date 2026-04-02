@@ -1,4 +1,7 @@
 using DrWatson
+using BenchmarkTools
+using Profile
+using ProfileView
 
 @quickactivate "neural_field"
 
@@ -6,10 +9,11 @@ include(srcdir("FEM.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 
+
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 20, num_el = 100)
+        Ω_args = (L = 10, num_el = 100)
         ),
     firing_function = (;
         f = f
@@ -33,9 +37,9 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 50, 
+    simulation_time = 10, 
     solution_time_step = nothing,
-    save_time_step = 1
+    save_time_step = [1,10]
 )
 
 L = G_params.Ω.Ω_args.L
@@ -48,9 +52,18 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    datafile_name = "1D_data_newinitial_2203_L$(L)_num_el$(num_el)T$(simulation_time)"
+    datafile_name = "0104_L$(L)_num_el$(num_el)T$(simulation_time)"
 )
 
 
 print("Executing the code")
-@time main(G_params, S_params, params)
+# timings = []
+
+# bch = @benchmark main(G_params, S_params, params)
+# display(bch)
+# push!(timings,bch)
+
+main(G_params, S_params, params)
+
+ProfileView.closeall()
+ProfileView.@profview main(G_params, S_params, params)
