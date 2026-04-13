@@ -1029,9 +1029,9 @@ version = "4.18.6+0"
 
 [[deps.GalerkinToolkit]]
 deps = ["AbstractTrees", "AutoHashEquals", "BlockArrays", "Combinatorics", "FastGaussQuadrature", "FillArrays", "ForwardDiff", "IterativeSolvers", "LinearAlgebra", "MPI", "MacroTools", "Metatheory", "Metis", "PartitionedArrays", "PartitionedSolvers", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "6c67bc0b5adb5fcf9dea22b2753461b3306e9341"
+git-tree-sha1 = "f6d373340fc3d97622e6036ebd30eccdf23b1738"
 uuid = "5e3ba9c4-dd81-444d-b69a-0e7bd7bf60a4"
-version = "0.6.0"
+version = "0.6.3"
 
     [deps.GalerkinToolkit.extensions]
     GalerkinToolkitGmshExt = "Gmsh"

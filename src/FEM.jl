@@ -105,7 +105,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, f) = workspace
+    #(; W, V, dΩ, f) = workspace
 
     num_layer = length(uz.x) - 1
 
@@ -116,24 +116,26 @@ function rhs_delayed!(
     node_node_last_z = uz.x[num_layer + 1]
 
     # Interpolation of the z_L from nodes to quadratures
+    node_z = view(node_node_last_z, :, 1) # put i the workspace
+    disc_Ω = GT.discrete_field(workspace.V, node_z)
+    z_faces = GT.each_face(disc_Ω, workspace.dΩ; tabulate = (GT.value,))
     for i in 1:n_nodes
         node_z = view(node_node_last_z, :, i)
-        disc_Ω = GT.discrete_field(V, node_z)
-        z_faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
+        z_faces = GT.replace_free_values(z_faces,node_z)
         qp = 0  
         node_du[i] = 0
         for z_face in z_faces
             for z_point in GT.each_point(z_face)
                 qp += 1
                 point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
-                fz = f(point_node_z)
-                node_du[i] +=  W[i,qp]*fz
+                fz = workspace.f(point_node_z)
+                node_du[i] +=  workspace.W[i,qp]*fz
             end
         end
         node_du[i] -= node_u[i]
     end
 
-    node_x = GT.node_coordinates(V)
+    node_x = GT.node_coordinates(workspace.V) # put this in the workspace
     node_node_dz1 = duz.x[2]
     node_node_z1 = uz.x[2]
 
@@ -160,5 +162,3 @@ function rhs_delayed!(
         end
     end  
 end
-
-

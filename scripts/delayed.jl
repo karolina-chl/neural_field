@@ -13,7 +13,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 10, num_el = 100)
+        Ω_args = (L = 20, num_el = 100)
         ),
     firing_function = (;
         f = f
@@ -37,7 +37,7 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 10, 
+    simulation_time = 50, 
     solution_time_step = nothing,
     save_time_step = [1,10]
 )
@@ -57,13 +57,11 @@ params = (
 
 
 print("Executing the code")
+@time main(G_params, S_params, params)
+
 # timings = []
 
 # bch = @benchmark main(G_params, S_params, params)
 # display(bch)
 # push!(timings,bch)
 
-main(G_params, S_params, params)
-
-ProfileView.closeall()
-ProfileView.@profview main(G_params, S_params, params)
