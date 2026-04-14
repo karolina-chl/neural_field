@@ -10,6 +10,7 @@ using SparseArrays
 using RecursiveArrayTools
 
 
+
 function main(G_params, S_params, params)
 
     ### Create a mesh 2D
@@ -38,7 +39,6 @@ function main(G_params, S_params, params)
 
     node_u = initialize_u.(node_x)
     all_z = initialize_z(num_layer, node_x)
-
     
     ### Numerical integration 
     integration_degree = G_params.other.integration_degree
@@ -49,18 +49,23 @@ function main(G_params, S_params, params)
     w = G_params.synaptic_matrix.w
 
     W = synaptic_builder(V,dΩ,w) 
+    n_nodes = length(node_x)
+    I_qp = build_qp_interpolation_matrix(V, dΩ, n_nodes)
+    n_qp = size(I_qp, 1)
+    z_qp_buf = Vector{Float64}(undef, n_qp)
     
     
     #ODE right-hand-side
     f = G_params.firing_function.f
-    workspace = (;W,V,dΩ,f)
+    workspace = (;W,V,dΩ,f,node_x, I_qp, z_qp_buf)
 
     
     #ODE solution
     T = S_params.simulation_time
+    tspan = (0.0, float(T))
     uz_array = ArrayPartition(node_u, all_z...) # three dots to treat matrix separate
-    ode = DE.ODEProblem(uz_array,[0,T]) do args...
-        rhs_delayed!(args...;workspace)
+    ode = DE.ODEProblem(uz_array,tspan) do args...
+        rhs_delayed_new!(args...;workspace)
     end
     
     save_dt = S_params.save_time_step
@@ -88,20 +93,5 @@ function main(G_params, S_params, params)
         end
     end 
 
-    print("Solution saved to JSON")
-
-    #plot the solution and save as mp3
-    if params.post_processing.movie
-        color = GT.discrete_field(V,node_u)
-        fig = Makie.Figure()
-        _,sc = GT.makie_surfaces(fig[1,1],Ω;color,axis,refinement=3,colormap)
-        fn = "solution.mp4"
-        integrator = DE.init(ode, DE.Tsit5())
-        prog = PM.ProgressThresh(0.0)
-        Makie.record(fig,fn,DE.tuples(integrator);framerate=10) do (uz,t)
-            node_u = uz.x[1] 
-            sc.color = GT.discrete_field(V,node_u)
-            PM.update!(prog,T-t)
-        end
-    end
+    println("Solution saved to JSON")
 end

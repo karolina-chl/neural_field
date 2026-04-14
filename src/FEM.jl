@@ -105,7 +105,6 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    #(; W, V, dΩ, f) = workspace
 
     num_layer = length(uz.x) - 1
 
@@ -116,12 +115,10 @@ function rhs_delayed!(
     node_node_last_z = uz.x[num_layer + 1]
 
     # Interpolation of the z_L from nodes to quadratures
-    node_z = view(node_node_last_z, :, 1) # put i the workspace
-    disc_Ω = GT.discrete_field(workspace.V, node_z)
-    z_faces = GT.each_face(disc_Ω, workspace.dΩ; tabulate = (GT.value,))
     for i in 1:n_nodes
         node_z = view(node_node_last_z, :, i)
-        z_faces = GT.replace_free_values(z_faces,node_z)
+        disc_Ω = GT.discrete_field(workspace.V, node_z)
+        z_faces = GT.each_face(disc_Ω, workspace.dΩ; tabulate = (GT.value,))   
         qp = 0  
         node_du[i] = 0
         for z_face in z_faces
@@ -135,15 +132,14 @@ function rhs_delayed!(
         node_du[i] -= node_u[i]
     end
 
-    node_x = GT.node_coordinates(workspace.V) # put this in the workspace
     node_node_dz1 = duz.x[2]
     node_node_z1 = uz.x[2]
 
-    #for the first layer 
-    for i in 1:n_nodes #iterating column by column 
+    # for the first layer 
+    for i in 1:n_nodes # iterating column by column 
         for j in 1:n_nodes
-            node_i = node_x[i]
-            node_j = node_x[j]
+            node_i = workspace.node_x[i]
+            node_j = workspace.node_x[j]
             node_node_dz1[j,i] = α(node_i, node_j, num_layer)*(node_u[j] - node_node_z1[j,i]) 
         end
     end
@@ -155,10 +151,113 @@ function rhs_delayed!(
         node_node_z2 = uz.x[layer+1]
         for i in 1:n_nodes #iterating column by column 
             for j in 1:n_nodes
-                node_i = node_x[i]
-                node_j = node_x[j]
+                node_i = workspace.node_x[i]
+                node_j = workspace.node_x[j]
                 node_node_dzn[j,i] = α(node_i, node_j, num_layer) *(node_node_z1[j,i] - node_node_z2[j,i]) 
             end     
         end
     end  
+end
+
+function rhs_delayed_new!(
+    duz,
+    uz,
+    p,
+    t;
+    workspace::NamedTuple,
+)
+    num_layer = length(uz.x) - 1
+
+    node_u = uz.x[1]
+    node_du = duz.x[1]
+    n_nodes = length(node_u)
+
+    node_node_last_z = uz.x[num_layer + 1]
+
+    I_qp = workspace.I_qp
+    z_qp = workspace.z_qp_buf
+    W = workspace.W
+
+    # Interpolation of z_L from nodes to quadrature points
+    for i in 1:n_nodes
+        mul!(z_qp, I_qp, view(node_node_last_z, :, i))
+
+        acc = 0.0
+        for qp in eachindex(z_qp)
+            acc += W[i, qp] * workspace.f(z_qp[qp])
+        end
+
+        node_du[i] = acc - node_u[i]
+    end
+
+    node_node_dz1 = duz.x[2]
+    node_node_z1 = uz.x[2]
+
+    # First layer
+    for i in 1:n_nodes
+        for j in 1:n_nodes
+            node_i = workspace.node_x[i]
+            node_j = workspace.node_x[j]
+            node_node_dz1[j, i] = α(node_i, node_j, num_layer) * (node_u[j] - node_node_z1[j, i])
+        end
+    end
+
+    # Remaining layers
+    for layer in 2:num_layer
+        node_node_dzn = duz.x[layer + 1]
+        node_node_z1 = uz.x[layer]
+        node_node_z2 = uz.x[layer + 1]
+
+        for i in 1:n_nodes
+            for j in 1:n_nodes
+                node_i = workspace.node_x[i]
+                node_j = workspace.node_x[j]
+                node_node_dzn[j, i] = α(node_i, node_j, num_layer) * (node_node_z1[j, i] - node_node_z2[j, i])
+            end
+        end
+    end
+end
+
+#nedded to new rhs delayed function 
+function count_qp(V, dΩ, n_nodes)
+    vals = zeros(n_nodes)
+    disc_Ω = GT.discrete_field(V, vals)
+    faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
+
+    n_qp = 0
+    for face in faces
+        for _ in GT.each_point(face)
+            n_qp += 1
+        end
+    end
+    return n_qp
+end
+
+function nodal_to_qp!(qp_vals, node_vals, V, dΩ)
+    disc_Ω = GT.discrete_field(V, node_vals)
+    faces = GT.each_face(disc_Ω, dΩ; tabulate = (GT.value,))
+
+    qp = 0
+    for face in faces
+        for point in GT.each_point(face)
+            qp += 1
+            qp_vals[qp] = GT.field(GT.value, point)
+        end
+    end
+    return qp_vals
+end
+
+function build_qp_interpolation_matrix(V, dΩ, n_nodes)
+    n_qp = count_qp(V, dΩ, n_nodes)
+    I_qp = Matrix{Float64}(undef, n_qp, n_nodes)
+
+    e = zeros(n_nodes)
+
+    for k in 1:n_nodes
+        fill!(e, 0.0)
+        e[k] = 1.0
+        nodal_to_qp!(view(I_qp, :, k), e, V, dΩ)
+    end
+
+    return I_qp
 end
