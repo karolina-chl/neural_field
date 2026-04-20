@@ -159,6 +159,67 @@ function rhs_delayed!(
     end  
 end
 
+function rhs_delayed_GT_test!(
+    duz,
+    uz,
+    p,
+    t;
+    workspace::NamedTuple,
+)
+
+    num_layer = length(uz.x) - 1
+
+    node_u  = uz.x[1] # modifies in place 
+    node_du = duz.x[1]  
+
+    n_nodes = length(node_u)
+    node_node_last_z = uz.x[num_layer + 1]
+
+    # Interpolation of the z_L from nodes to quadratures
+    for i in 1:n_nodes
+        node_z = view(node_node_last_z, :, i)
+        disc_Ω = GT.discrete_field(workspace.V, node_z)
+        z_faces = GT.each_face_new(disc_Ω, workspace.dΩ; tabulate = (GT.value,))   
+        qp = 0  
+        node_du[i] = 0
+        for z_face in z_faces
+            for z_point in GT.each_point_new(z_face)
+                qp += 1
+                point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
+                fz = workspace.f(point_node_z)
+                node_du[i] +=  workspace.W[i,qp]*fz
+            end
+        end
+        node_du[i] -= node_u[i]
+    end
+
+    node_node_dz1 = duz.x[2]
+    node_node_z1 = uz.x[2]
+
+    # for the first layer 
+    for i in 1:n_nodes # iterating column by column 
+        for j in 1:n_nodes
+            node_i = workspace.node_x[i]
+            node_j = workspace.node_x[j]
+            node_node_dz1[j,i] = α(node_i, node_j, num_layer)*(node_u[j] - node_node_z1[j,i]) 
+        end
+    end
+    
+    # for all other layers
+    for layer in 2:num_layer
+        node_node_dzn = duz.x[layer+1] #indeks switched by 1 because of the u
+        node_node_z1 = uz.x[layer]
+        node_node_z2 = uz.x[layer+1]
+        for i in 1:n_nodes #iterating column by column 
+            for j in 1:n_nodes
+                node_i = workspace.node_x[i]
+                node_j = workspace.node_x[j]
+                node_node_dzn[j,i] = α(node_i, node_j, num_layer) *(node_node_z1[j,i] - node_node_z2[j,i]) 
+            end     
+        end
+    end  
+end
+
 function rhs_delayed_new!(
     duz,
     uz,

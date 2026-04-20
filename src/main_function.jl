@@ -49,15 +49,10 @@ function main(G_params, S_params, params)
     w = G_params.synaptic_matrix.w
 
     W = synaptic_builder(V,dΩ,w) 
-    n_nodes = length(node_x)
-    I_qp = build_qp_interpolation_matrix(V, dΩ, n_nodes)
-    n_qp = size(I_qp, 1)
-    z_qp_buf = Vector{Float64}(undef, n_qp)
-    
     
     #ODE right-hand-side
     f = G_params.firing_function.f
-    workspace = (;W,V,dΩ,f,node_x, I_qp, z_qp_buf)
+    workspace = (;W,V,dΩ,f,node_x)
 
     
     #ODE solution
@@ -65,7 +60,7 @@ function main(G_params, S_params, params)
     tspan = (0.0, float(T))
     uz_array = ArrayPartition(node_u, all_z...) # three dots to treat matrix separate
     ode = DE.ODEProblem(uz_array,tspan) do args...
-        rhs_delayed_new!(args...;workspace)
+        rhs_delayed_GT_test!!(args...;workspace)
     end
     
     save_dt = S_params.save_time_step
