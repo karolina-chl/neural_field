@@ -52,15 +52,23 @@ function main(G_params, S_params, params)
     
     #ODE right-hand-side
     f = G_params.firing_function.f
-    workspace = (;W,V,dΩ,f,node_x)
 
+    #new
+    V_faces= GT.each_face(V,dΩ;tabulate=(GT.value,))
+    I_face = transpose(V_faces.accessor.reference_space_face.workspace.values[1])
+    face_to_dofs = GT.face_dofs(V)
+
+    #new vectores
+    u_face_nodes = zeros(size(I_face,2))
+    u_face_points = zeros(size(I_face,1))
+    workspace = (;W,V,dΩ,f,node_x, I_face, face_to_dofs, u_face_nodes, u_face_points)
     
     #ODE solution
     T = S_params.simulation_time
     tspan = (0.0, float(T))
     uz_array = ArrayPartition(node_u, all_z...) # three dots to treat matrix separate
     ode = DE.ODEProblem(uz_array,tspan) do args...
-        rhs_delayed_GT_test!!(args...;workspace)
+        rhs_delayed!(args...;workspace)
     end
     
     save_dt = S_params.save_time_step

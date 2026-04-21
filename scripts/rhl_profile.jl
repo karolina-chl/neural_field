@@ -31,13 +31,23 @@ function setup_rhs_delayed_problem(;
     W = synaptic_matrix(V, dΩ, w)
     n_nodes = length(node_x)
 
+    #new
+    V_faces= GT.each_face(V,dΩ;tabulate=(GT.value,))
+    I_face = transpose(V_faces.accessor.reference_space_face.workspace.values[1])
+    face_to_dofs = GT.face_dofs(V)
+
+    #new vectores
+    u_face_nodes = zeros(size(I_face,2))
+    u_face_points = zeros(size(I_face,1))
+    workspace = (;W,V,dΩ,f,node_x, I_face, face_to_dofs, u_face_nodes, u_face_points)
+
     if new_fun == true
         I_qp = build_qp_interpolation_matrix(V, dΩ, n_nodes)
         n_qp = size(I_qp, 1)
         z_qp_buf = Vector{Float64}(undef, n_qp)
         workspace = (; W, V, dΩ, f, node_x, I_qp, z_qp_buf)
     else 
-        workspace = (; W, V, dΩ, f, node_x)
+        workspace = (;W,V,dΩ,f,node_x, I_face, face_to_dofs, u_face_nodes, u_face_points)
     end         
     # Initial conditions
     node_u = φ.(node_x)
@@ -57,7 +67,8 @@ function run_rhs_delayed(duz, uz, p, t, workspace; n = 10, new_fun = true)
         end
     else
         for _ in 1:n
-            rhs_delayed_new!(duz, uz, p, t; workspace)
+            #rhs_delayed_new!(duz, uz, p, t; workspace)
+            rhs_delayed_GT_test!(duz, uz, p, t; workspace)
         end 
     end       
 end
@@ -99,16 +110,16 @@ duz, uz, p, t, workspace = setup_rhs_delayed_problem(;
     L = 10,
     num_el = 100,
     num_layer = 2,
-    new_fun = true
+    new_fun = false
 ) 
 
-run_rhs_delayed(duz, uz, p, t, workspace; n = 1, new_fun = true)
+@time run_rhs_delayed(duz, uz, p, t, workspace; n = 1, new_fun = false)
 
 Profile.clear()
 ProfileView.closeall()
 
 ProfileView.@profview begin
-    run_rhs_delayed(duz, uz, p, t, workspace; n = 100, new_fun = true)
+    run_rhs_delayed(duz, uz, p, t, workspace; n = 10, new_fun = false)
 end
 
 

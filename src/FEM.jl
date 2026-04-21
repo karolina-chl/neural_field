@@ -116,15 +116,23 @@ function rhs_delayed!(
 
     # Interpolation of the z_L from nodes to quadratures
     for i in 1:n_nodes
-        node_z = view(node_node_last_z, :, i)
-        disc_Ω = GT.discrete_field(workspace.V, node_z)
-        z_faces = GT.each_face(disc_Ω, workspace.dΩ; tabulate = (GT.value,))   
+        # node_z = view(node_node_last_z, :, i)
+        # disc_Ω = GT.discrete_field(workspace.V, node_z)
+        # z_faces = GT.each_face(disc_Ω, workspace.dΩ; tabulate = (GT.value,))   
         qp = 0  
         node_du[i] = 0
-        for z_face in z_faces
-            for z_point in GT.each_point(z_face)
+        for dofs in workspace.face_to_dofs
+            for k in 1:length(dofs)
+                workspace.u_face_nodes[k] = node_node_last_z[dofs[k],i]
+            end
+            mul!(workspace.u_face_points,workspace.I_face,workspace.u_face_nodes)   
+        #for z_face in z_faces
+            
+            # for z_point in GT.each_point(z_face)
+            for q in 1:length(workspace.u_face_points)
                 qp += 1
-                point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
+                #point_node_z = GT.field(GT.value, z_point) #this is an element from point_node z matrix
+                point_node_z = workspace.u_face_points[q]
                 fz = workspace.f(point_node_z)
                 node_du[i] +=  workspace.W[i,qp]*fz
             end
