@@ -13,7 +13,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 2, num_el = 10)
+        Ω_args = (L = 30, num_el = 1024)
         ),
     firing_function = (;
         f = f
@@ -37,7 +37,7 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 1, 
+    simulation_time = 50, 
     solution_time_step = nothing,
     save_time_step = [1,50]
 )
