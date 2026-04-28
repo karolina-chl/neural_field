@@ -9,7 +9,7 @@ include(srcdir("main_function.jl"))
 G_params = (;
     Ω = (
         build_Ω = one_d_mesh, 
-        Ω_args = (L = 20, num_el = 100)
+        Ω_args = (L = 30, num_el = 1024)
         ),
     firing_function = (;
         f = f
@@ -24,7 +24,7 @@ G_params = (;
         ),
     synaptic_matrix = (
         w = w, 
-        synaptic_builder = synaptic_matrix, 
+        synaptic_builder = synaptic_matrix_dense, 
         ),
     other = (
         interpolation_degree = 1, 
@@ -35,7 +35,7 @@ G_params = (;
 S_params = (
     simulation_time = 50, 
     solution_time_step = nothing,
-    save_time_step = 1
+    save_time_step = [1,50]
 )
 
 L = G_params.Ω.Ω_args.L
@@ -48,7 +48,7 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    datafile_name = "1D_data_newinitial_2203_L$(L)_num_el$(num_el)T$(simulation_time)"
+    datafile_name = "Test_test_test_23.04"
 )
 
 

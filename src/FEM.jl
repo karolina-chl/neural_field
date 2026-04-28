@@ -81,6 +81,51 @@ function synaptic_matrix(V,dΩ,w)
     return W
 end
 
+function synaptic_matrix_dense(V,dΩ,w)
+    node_x = GT.node_coordinates(V)
+    nnodes = length(node_x)
+    npoints = sum(
+        1 for dΩ_face in GT.each_face(dΩ)
+          for dΩ_point in GT.each_point(dΩ_face)
+    )
+    W = zeros(nnodes, npoints)
+    point = 0
+    for dΩ_face in GT.each_face(dΩ)
+        for dΩ_point in GT.each_point(dΩ_face)
+            point += 1
+            y =  GT.coordinate(dΩ_point)
+            dy = GT.weight(dΩ_point)
+            for (node,x) in enumerate(node_x)
+                wxy = w(x,y)
+                W[node, point] = wxy*dy
+            end
+        end
+    end
+    return W
+end     
+
+function synaptic_matrix_dense_transposed(V,dΩ,w)
+    node_x = GT.node_coordinates(V)
+    nnodes = length(node_x)
+    npoints = sum(
+        1 for dΩ_face in GT.each_face(dΩ)
+          for dΩ_point in GT.each_point(dΩ_face)
+    )
+    W = zeros(npoints, nnodes)
+    point = 0
+    for dΩ_face in GT.each_face(dΩ)
+        for dΩ_point in GT.each_point(dΩ_face)
+            point += 1
+            y =  GT.coordinate(dΩ_point)
+            dy = GT.weight(dΩ_point)
+            for (node,x) in enumerate(node_x)
+                wxy = w(x,y)
+                W[point, node] = wxy*dy
+            end
+        end
+    end
+    return W
+end
 
 function rhs!(node_du,node_u,p,t;workspace)
     (;W,V,dΩ,node_wfu,point_fu) = workspace
@@ -105,7 +150,7 @@ function rhs_delayed!(
     t;
     workspace::NamedTuple,
 )
-    (; W, V, dΩ, f, delay_matrix) = workspace
+    (; W, V, dΩ, f) = workspace
 
     num_layer = length(uz.x) - 1
 
@@ -161,4 +206,65 @@ function rhs_delayed!(
     end  
 end
 
+function rhs_delayed_corrected!(
+    duz,
+    uz,
+    p,
+    t;
+    workspace::NamedTuple,
+)
 
+    num_layer = length(uz.x) - 1
+
+    node_u  = uz.x[1] # modifies in place 
+    node_du = duz.x[1]  
+
+    n_nodes = length(node_u)
+    node_node_last_z = uz.x[num_layer + 1]
+
+    # Interpolation of the z_L from nodes to quadratures
+    for i in 1:n_nodes   
+        qp = 0  
+        node_du[i] = 0
+        for dofs in workspace.face_to_dofs
+            for k in 1:length(dofs)
+                workspace.u_face_nodes[k] = node_node_last_z[dofs[k],i]
+            end
+            mul!(workspace.u_face_points,workspace.I_face,workspace.u_face_nodes)   
+
+            for q in 1:length(workspace.u_face_points)
+                qp += 1
+                point_node_z = workspace.u_face_points[q]
+                fz = workspace.f(point_node_z)
+                node_du[i] +=  workspace.W[i,qp]*fz
+            end
+        end
+        node_du[i] -= node_u[i]
+    end
+
+    node_node_dz1 = duz.x[2]
+    node_node_z1 = uz.x[2]
+
+    # for the first layer 
+    for i in 1:n_nodes # iterating column by column 
+        for j in 1:n_nodes
+            node_i = workspace.node_x[i]
+            node_j = workspace.node_x[j]
+            node_node_dz1[j,i] = α(node_i, node_j, num_layer)*(node_u[j] - node_node_z1[j,i]) 
+        end
+    end
+    
+    # for all other layers
+    for layer in 2:num_layer
+        node_node_dzn = duz.x[layer+1] #indeks switched by 1 because of the u
+        node_node_z1 = uz.x[layer]
+        node_node_z2 = uz.x[layer+1]
+        for i in 1:n_nodes #iterating column by column 
+            for j in 1:n_nodes
+                node_i = workspace.node_x[i]
+                node_j = workspace.node_x[j]
+                node_node_dzn[j,i] = α(node_i, node_j, num_layer) *(node_node_z1[j,i] - node_node_z2[j,i]) 
+            end     
+        end
+    end  
+end

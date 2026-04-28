@@ -57,8 +57,8 @@ function visualize_z(datafile)
 
 end 
 
-#visualize_first_and_last("data/exp_raw/time_testtime", 20)
-#visualize_U_history("data/exp_raw/1D_data_newinitial_2203_L30_num_el300T50_post")
-#visualize_z("data/exp_raw/1D_data_newinitial_2203_L30_num_el300T50_post")
+#visualize_first_and_last("data/exp_raw/Test_test_test_23.04", 30)
+visualize_U_history("data/exp_raw/Test_test_test_23.04")
+#visualize_z("data/exp_raw/Test_test_test_23.04")
 
 
