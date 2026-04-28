@@ -24,7 +24,7 @@ G_params = (;
         ),
     synaptic_matrix = (
         w = w, 
-        synaptic_builder = synaptic_matrix_dense, 
+        synaptic_builder = synaptic_matrix, 
         ),
     other = (
         interpolation_degree = 1, 

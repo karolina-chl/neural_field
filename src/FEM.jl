@@ -268,3 +268,21 @@ function rhs_delayed_corrected!(
         end
     end  
 end
+
+
+# L = G_params.Ω.Ω_args.L
+# num_el = G_params.Ω.Ω_args.num_el
+    
+# mesh = one_d_mesh(L, num_el)
+# Ω = GT.interior(mesh)
+
+# ### Finite element interpolation
+# V = GT.lagrange_space(Ω,1)
+# node_x = GT.node_coordinates(V)
+# dΩ = GT.quadrature(Ω,1)
+
+# W = synaptic_matrix_dense(V, dΩ, w)
+# WT = synaptic_matrix_dense_transposed(V, dΩ, w)
+
+# @test size(WT) == reverse(size(W))
+# @test WT == transpose(W) 
