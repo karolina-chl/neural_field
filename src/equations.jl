@@ -66,6 +66,19 @@ function z_initial(num_layer, node_x)
     [copy(z0) for _ in 1:num_layer]
 end
 
+function z_initial_parallel(lnn_z0) # adjust after I know how is z divided!
+    """ Generate initial condition for a layer, 
+    when given subset of z
+    """
+    for i in 1:dim_u
+        for j in 1:dim_u
+            z_layer[i,j] = 1* φ(node_x[i])*φ(node_x[j])
+        end 
+    end
+    return z_layer
+
+end     
+
 
 
 

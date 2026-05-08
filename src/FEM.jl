@@ -3,8 +3,9 @@ Functions needed for FEM method
 """
 
 import GalerkinToolkit as GT
-#import GLMakie as Makie
+import GLMakie 
 using RecursiveArrayTools
+using SparseArrays
 import Gmsh
 
 include("equations.jl")
@@ -230,8 +231,7 @@ function rhs_delayed_corrected!(
             for k in 1:length(dofs)
                 workspace.u_face_nodes[k] = node_node_last_z[dofs[k],i]
             end
-            mul!(workspace.u_face_points,workspace.I_face,workspace.u_face_nodes)   
-
+            mul!(workspace.u_face_points,workspace.I_face,workspace.u_face_nodes)
             for q in 1:length(workspace.u_face_points)
                 qp += 1
                 point_node_z = workspace.u_face_points[q]
@@ -268,21 +268,3 @@ function rhs_delayed_corrected!(
         end
     end  
 end
-
-
-# L = G_params.Ω.Ω_args.L
-# num_el = G_params.Ω.Ω_args.num_el
-    
-# mesh = one_d_mesh(L, num_el)
-# Ω = GT.interior(mesh)
-
-# ### Finite element interpolation
-# V = GT.lagrange_space(Ω,1)
-# node_x = GT.node_coordinates(V)
-# dΩ = GT.quadrature(Ω,1)
-
-# W = synaptic_matrix_dense(V, dΩ, w)
-# WT = synaptic_matrix_dense_transposed(V, dΩ, w)
-
-# @test size(WT) == reverse(size(W))
-# @test WT == transpose(W) 
