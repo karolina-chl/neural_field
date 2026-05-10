@@ -66,17 +66,15 @@ function z_initial(num_layer, node_x)
     [copy(z0) for _ in 1:num_layer]
 end
 
-function z_initial_parallel(lnn_z0) # adjust after I know how is z divided!
-    """ Generate initial condition for a layer, 
-    when given subset of z
+function z_initial_one_entry(nodex_i, nodex_j)
+    """ This function generates initial condition
+    for a given entry of z, base on the coresponding coordinates of u
+    Arguments: 
+        nodex_i: ith coordinate of node_x 
+        nodex_j: jth coordinate of node_x 
     """
-    for i in 1:dim_u
-        for j in 1:dim_u
-            z_layer[i,j] = 1* φ(node_x[i])*φ(node_x[j])
-        end 
-    end
-    return z_layer
-
+    z_ij = 1* φ(nodex_i)*φ(nodex_j)
+    return z_ij
 end     
 
 
