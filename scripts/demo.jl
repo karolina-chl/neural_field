@@ -178,7 +178,7 @@ function rhs_W!(setup, ln_du)
 end
 
 # It is a good idea to measure the time for all lines
-function rhs!(du,u,p_setup,elap)
+function rhs!(duz,uz,p_setup,elap_rhs)
     elap[1] = @elapsed foreach(setup->fill!(setup.gq_u,0),p_setup) # This is negligible as long as N/P >> 1
     elap[2] = @elapsed p_ln_u = PA.local_values(u)
     elap[3] = @elapsed foreach(rhs_I!,p_setup,p_ln_u)
