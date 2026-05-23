@@ -364,6 +364,6 @@ function main_debug(nx,ny,np,num_layers)
     end
 end
 
-main_debug(10,10,3,2)
+main_debug(10,10,5,2)
 
 

@@ -60,33 +60,13 @@ function visualize_z(datafile)
 end 
 
 
+
+
 #visualize_first_and_last("data/exp_raw/Test_test_test_23.04", 30)
 #visualize_U_history("data/exp_raw/Test_test_test_23.04")
 #visualize_z("data/exp_raw/Test_test_test_23.04")
 
 
-L = 30
-num_el = 100
-    
-mesh = one_d_mesh(L, num_el)
-Ω = GT.interior(mesh)
 
-### Finite element interpolation
-V = GT.lagrange_space(Ω,1)
-node_x = GT.node_coordinates(V)
-dΩ = GT.quadrature(Ω,1)
-
-WS = synaptic_matrix(V,dΩ,w)
-W = synaptic_matrix_dense(V, dΩ, w)
-WT = synaptic_matrix_dense_transposed(V, dΩ, w)
-
-#size(W)
-size(WS)
-
-# fig = Figure()
-# ax = Axis(fig[1, 1], xlabel = "WS", ylabel = "WS")
-# hm = GLMakie.heatmap!(ax, WS)
-# Colorbar(fig[1, 2], hm)
-# save("WS.png", fig)
 
 
