@@ -1,4 +1,3 @@
-module Demo
 using DrWatson
 import GalerkinToolkit as GT
 import PartitionedArrays as PA
@@ -317,7 +316,6 @@ function main(backend,np,nx,ny,num_layers, title)
     z_layers = [map(copy, p_z0_all[layer]) for layer in 1:num_layers]
     dz_layers = [map(dz->zero(dz), p_z0_all[layer]) for layer in 1:num_layers]
     
-    # uz0 = ArrayPartition(u0, p_z0_all...)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
@@ -326,7 +324,7 @@ function main(backend,np,nx,ny,num_layers, title)
     for r in 1:nr
         elap_rhs = r_elap_rhs[r]
 
-        # copy!(u,u0)
+        copy!(u,u0)
 
         rhs!(duz,uz,p_setup,elap_rhs)
     end
@@ -337,8 +335,11 @@ function main(backend,np,nx,ny,num_layers, title)
     elap[:mem] = [[mem]]
     p_elap_main = PA.gather(map(_->elap,ranks))
     PA.map_main(p_elap_main) do p_elap
-        JSON.json("$title.json",p_elap)
+        open("$title.json", "w") do io
+            JSON.print(io, p_elap)
+        end
     end
+    # return duz
     title
 end
 
@@ -358,10 +359,11 @@ end
 
 function main_debug(nx,ny,np,num_layers)
     PA.with_debug() do backend
+        #return main(backend,np,nx,ny,num_layers,"debug")
         main(backend,np,nx,ny,num_layers,"debug")
     end
 end
 
-end # module
+main_debug(10,10,3,2)
 
-Demo.main_debug(3, 3, 2, 2)
+
