@@ -1,13 +1,16 @@
 module Demo
-
+using DrWatson
 import GalerkinToolkit as GT
 import PartitionedArrays as PA
 import MPI; MPI.Init()
 import JSON
 using LinearAlgebra
+using RecursiveArrayTools: ArrayPartition
 
-function prepare_setups_on_main(np,nx,ny)
-    setup = do_setup(nx,ny)
+include(srcdir("equations.jl"))
+
+function prepare_setups_on_main(np,nx,ny, num_layers)
+    setup = do_setup(nx,ny, num_layers)
     (;gn_x) = setup
     ngn = length(gn_x) # number of global nodes 
     gn_partition_sequential = PA.uniform_partition(1:np,np,ngn)
@@ -18,7 +21,7 @@ function prepare_setups_on_main(np,nx,ny)
     end
 end
 
-function do_setup(nx,ny)
+function do_setup(nx, ny, num_layers)
     mesh = GT.cartesian_mesh((0,1,0,1),(nx,ny))
     Ω = GT.interior(mesh)
     dΩ = GT.quadrature(Ω,2)
@@ -81,7 +84,7 @@ function restrict_setup(setup, ln_gn, gn_ln)
     nln = length(ln_x)
 
     # Interpolated z_L values at global quadrature points
-    gq_zl = zeros(ngq, nln)
+    gq_ln_zl_tilde = zeros(ngq, nln)
 
     # Full global u vector, needed later for dz_1.
     gn_u = zeros(ngn)
@@ -101,7 +104,7 @@ function restrict_setup(setup, ln_gn, gn_ln)
         lf_gf,
         lf_fn_gn,
         lf_fn_ln,
-        gq_zl,
+        gq_ln_zl_tilde,
         gn_u,
         fn_ln_zl,
         fq_ln_zl_tilde,
@@ -150,12 +153,12 @@ function all_reduce!(p_gq_u::PA.MPIArray)
 end
 
 function rhs_I!(setup, gn_ln_zl)
-    (;fq_fn_I, gf_fn_gn, gq_zl, fn_ln_zl, fq_ln_zl_tilde,ngf)= setup
+    (;fq_fn_I, gf_fn_gn, gq_ln_zl_tilde, fn_ln_zl, fq_ln_zl_tilde,ngf)= setup
 
     nfq, nfn = size(fq_fn_I)
     nln = size(gn_ln_zl, 2)
 
-    fill!(gq_zl, 0)
+    fill!(gq_ln_zl_tilde, 0)
 
     for gf in 1:ngf # loop over all faces
         fn_gn = gf_fn_gn[gf]
@@ -172,18 +175,19 @@ function rhs_I!(setup, gn_ln_zl)
         for fq in 1:nfq
             gq = (gf-1)*nfq + fq # converts local quadrature indeks to global quatrature index
             for ln in 1:nln
-                gq_zl[gq, ln] = fq_ln_zl_tilde[fq, ln]
+                gq_ln_zl_tilde[gq, ln] = fq_ln_zl_tilde[fq, ln]
             end     
         end
     end
 end
 
 function rhs_W!(setup, ln_du, ln_u)
-    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, ngn, lf_gf, lf_fn_gn, lf_fn_ln, gq_zl, gn_u, fn_ln_zl, fq_ln_zl_tilde) = setup
+    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, ngn, lf_gf, lf_fn_gn, lf_fn_ln,gq_ln_zl_tilde, gn_u, fn_ln_zl, fq_ln_zl_tilde) = setup
     
     fill!(ln_du,0)
+    fill!(gn_u, 0)
 
-    nln = length(fq_ln_zl_tilde,2)
+    nln = size(fq_ln_zl_tilde,2)
     nfq,nfn = size(fq_fn_I)
     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
     zy = zero(Ty) # zero coordinate vectore
@@ -222,52 +226,45 @@ function rhs_W!(setup, ln_du, ln_u)
                 
                 # calculate an adequate W entry for a given quadrature point and given local node
                 wnq = w(x,y)*dy 
-                zqn = fq_ln_zl_tilde[y,x] # this is not indexed by faces 
-                ln_du[ln] =+ wnq * f(zqn)
+                gq = (gf - 1) * nfq + fq # where does this equation come from?
+                zqn = gq_ln_zl_tilde[gq, ln]  
+                ln_du[ln] += wnq * f(zqn)
             end
         end
-        ln_du[ln] =-ln_u[ln]
-    end     
+        ln_du[ln] -= ln_u[ln]
+        # writing global u values to the gn_u (for all reduce to work properly)
+        gn = ln_gn[ln]
+        gn_u[gn] = ln_u[ln]
+    end  
 end
 
-function rhs_Z!(u_full, gn_ln_zzz)
-    """
-    Used to update the layers in each respective process. 
-    It needs full vector of U, 
-    and a respective columns of all layers belonging to that process.
-    u_full - full vector of u 
-    gn_ln_zzz  - all local parts of the layers (ArrayPartition)  
-    """
+function rhs_Z1!(setup, gn_u, gn_ln_z1, gn_ln_dz1) 
+    (;gn_x, ln_x, num_layers) = setup
 
+    ngn, nln = size(gn_ln_z1)
 
-    (;gn_ln_dz, z_full, dz_full, ngn, num_layers) = setup #this is not yet in setup
-    
-    gn_ln_z1 = z_full.x[1] # assumes that u is stored elsewhere
-    gn_ln_dz1 = dz_full.x[1] # assumes that du is stored elsewhere
-
-    # for the first layer 
     for i in 1:nln # iterating column by column 
+        y = ln_x[i]
         for j in 1:ngn
             x = gn_x[j]
-            y = ln_x[i]
-            gn_ln_dz1[j,i] = α(x, y, num_layer)*(gu_full[j] - gn_ln_z1[j,i]) 
+            gn_ln_dz1[j,i] = α(x, y, num_layers)*(gn_u[j] - gn_ln_z1[j,i]) 
         end
     end
-    
-    # for all other layers
-    for layer in 2:num_layer
-        gn_ln_dzn = dz_full.x[layer] #indeks switched by 1 because of the u
-        gn_ln_z1 = z_full.x[layer-1] # previous layer 
-        gn_ln_z2 = z_full.x[layer] # current layer 
-        for i in 1:nln #iterating column by column 
-            for j in 1:ngn
-                x = gn_x[j]
-                y = ln_x[i]
-                gn_ln_dzn[j,i] = α(x, y, num_layer) *(gn_ln_z1[j,i] - gn_ln_z2[j,i]) 
-            end     
-        end
+end
+
+function rhs_Zn!(setup, dz_curr, z_prev, z_curr)
+    (;gn_x, ln_x, num_layers) = setup
+    ngn, nln = size(z_curr)
+
+    for i in 1:nln #iterating column by column 
+        y = ln_x[i]
+        for j in 1:ngn
+            x = gn_x[j]
+            dz_curr[j,i] = α(x, y, num_layers) *(z_prev[j,i] - z_curr[j,i]) 
+        end     
     end
 end     
+    
 
 # It is a good idea to measure the time for all lines
 function rhs!(duz,uz, p_setup, elap_rhs)
@@ -276,26 +273,31 @@ function rhs!(duz,uz, p_setup, elap_rhs)
         zl = uz.x[num_layers + 1]
         z_all = uz.x[2:num_layers + 1]
         du = duz.x[1]
+        dz_all = duz.x[2:num_layers + 1]
         u = uz.x[1]
     end 
-    
-    elap_rhs[2] = @elapsed p_zl = PA.local_values(zl) 
-    elap_rhs[3] = @elapsed p_z_all = PA.local_values(z_all)
-    elap_rhs[4] = @elapsed foreach(rhs_I!,p_setup, p_zl)
-    elap_rhs[5] = @elapsed p_ln_du = PA.local_values(du) 
-    elap_rhs[6] = @elapsed p_ln_u = PA.local_values(u)
-    elap_rhs[7] = @elapsed foreach(rhs_W!,p_setup,p_ln_du,p_ln_u)  
-    elap_rhs[8] = @elapsed all_reduce!(p_ln_u) 
-    elap_rhs[9] = @elapsed foreach(rhs_Z!, p_ln_u, gn_ln_zall) 
+
+    elap_rhs[2] = @elapsed foreach(rhs_I!,p_setup, zl)
+    elap_rhs[3] = @elapsed p_ln_du = PA.local_values(du) 
+    elap_rhs[4] = @elapsed p_ln_u = PA.local_values(u)
+    elap_rhs[5] = @elapsed foreach(rhs_W!,p_setup,p_ln_du,p_ln_u)
+    elap_rhs[6] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
+    elap_rhs[7] = @elapsed all_reduce!(p_gn_u) 
+    elap_rhs[8] = @elapsed begin 
+        foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
+        for layer in 2:num_layers
+            foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
+        end     
+    end  
 end
 
-function main(backend,np,nx,ny,title)
+function main(backend,np,nx,ny,num_layers, title)
     ranks = backend(1:np) # creates a partitioned representation of the ranks /process IDs
 
     # Setup
     elap_setup = zeros(2)
     elap_setup[1] = @elapsed p_setup_on_main = PA.map_main(ranks) do _
-                                 prepare_setups_on_main(np,nx,ny)
+                                prepare_setups_on_main(np,nx,ny,num_layers)
                              end
     elap_setup[2] = @elapsed p_setup = PA.scatter(p_setup_on_main)
 
@@ -303,24 +305,29 @@ function main(backend,np,nx,ny,title)
 
     # Initial condition
     ngn = PA.getany(map(setup->setup.ngn,p_setup))
-    num_layers = PA.getany(map(setup->setup.num_layers, p_setup))
     gn_partition = PA.uniform_partition(ranks, np, ngn)
     p_ln_u0  = map(setup_ln_u0, p_setup)
     p_ln_z0 = map(setup_ln_z0, p_setup, p_ln_u0) 
     
     u0 = PA.PVector(p_ln_u0, gn_partition)
+    u = similar(u0)
+    du = similar(u0)
     
     p_z0_all = [map(copy, p_ln_z0) for _ in 1:num_layers]
+    z_layers = [map(copy, p_z0_all[layer]) for layer in 1:num_layers]
+    dz_layers = [map(dz->zero(dz), p_z0_all[layer]) for layer in 1:num_layers]
+    
+    # uz0 = ArrayPartition(u0, p_z0_all...)
+    uz = ArrayPartition(u, z_layers...)
+    duz = ArrayPartition(du, dz_layers...)
 
-    uz0 = ArrayPartition(u0, p_z0_all...)
-    uz = similar(uz0)
-    duz = similar(uz0)
-
-    nr = 10
-    r_elap_rhs = [zeros(7) for _ in 1:nr]
+    nr = 1
+    r_elap_rhs = [zeros(8) for _ in 1:nr]
     for r in 1:nr
         elap_rhs = r_elap_rhs[r]
-        copy!(uz,uz0)
+
+        # copy!(u,u0)
+
         rhs!(duz,uz,p_setup,elap_rhs)
     end
 
@@ -349,12 +356,12 @@ function main_mpi(nx,ny)
     end
 end
 
-function main_debug(nx,ny,np)
+function main_debug(nx,ny,np,num_layers)
     PA.with_debug() do backend
-        main(backend,np,nx,ny,"debug")
+        main(backend,np,nx,ny,num_layers,"debug")
     end
 end
 
 end # module
 
-Demo.main_debug(3, 3, 2)
+Demo.main_debug(3, 3, 2, 2)
