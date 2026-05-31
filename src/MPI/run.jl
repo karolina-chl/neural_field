@@ -30,10 +30,10 @@ if rank == root
     ngn = length(gn_x) 
     ln_gn_all = partition_nodes(nranks,ngn) 
 end
-MPI.bcast(setup_root,comm;root) # should I use Bcast! ?
-MPI.bcast(ln_gn_all,comm;root) # maybe they don't all need full mapping 
+setup_root = MPI.bcast(setup_root,comm;root) # should I use Bcast! ?
+ln_gn_all = MPI.bcast(ln_gn_all,comm;root) # maybe they don't all need full mapping 
 
-ln_gn = ln_gn_all[rank]
+ln_gn = ln_gn_all[rank+1]
 print("My rank is $rank and my ln_gn is $ln_gn")
 
 MPI.Finalize()
