@@ -6,19 +6,18 @@ import JSON
 using LinearAlgebra
 using RecursiveArrayTools: ArrayPartition
 
-include(srcdir("equations.jl"))
-
-function prepare_setups_on_main(np,nx,ny, num_layers)
-    setup = do_setup(nx,ny, num_layers)
-    (;gn_x) = setup
-    ngn = length(gn_x) # number of global nodes 
-    gn_partition_sequential = PA.uniform_partition(1:np,np,ngn)
-    p_fem_setup = map(gn_partition_sequential) do nids
-        ln_gn = PA.local_to_global(nids)
-        gn_ln = PA.global_to_local(nids)
-        restrict_setup(setup,ln_gn,gn_ln)
+function partition_nodes(np,ngn)
+    all = Vector{Vector{Int}}(undef,np)
+    size, rest = divrem(ngn, np)        
+    ngn_start = 1
+    for i in 1:np       
+        len = size + (i <= rest ? 1 : 0) 
+        ngn_end = ngn_start + len - 1
+        all[i] = ngn_start:ngn_end
+        ngn_start = ngn_end + 1
     end
-end
+    return all   
+end    
 
 function do_setup(nx, ny, num_layers)
     mesh = GT.cartesian_mesh((0,1,0,1),(nx,ny))
@@ -31,10 +30,6 @@ function do_setup(nx, ny, num_layers)
     fq_refdy = GT.weights(GT.reference_quadratures(dΩ)[1])
     gf_fn_gn = GT.face_nodes(V)
     gn_x = GT.node_coordinates(V)
-    nfq = size(fq_fn_I,1)
-    ngf = length(gf_fn_gn)
-    ngq = nfq*ngf
-    ngn = length(gn_x)
     (;fq_fn_I,fq_fn_dI,fq_refdy,gf_fn_gn,gn_x,num_layers)
 end   
 
@@ -123,33 +118,33 @@ function setup_ln_z0(setup, ln_u0)
 end
 
 
-function all_reduce!(p_gq_u::AbstractArray)
-    gq_u_1 = p_gq_u[1]
-    for p in 2:length(p_gq_u)
-        gq_u = p_gq_u[p]
-        for gq in 1:length(gq_u)
-            gq_u_1[gq] += gq_u[gq]
-        end
-    end
-    for p in 2:length(p_gq_u)
-        gq_u = p_gq_u[p]
-        for gq in 1:length(gq_u)
-            gq_u[gq] = gq_u_1[gq]
-        end
-    end
-end
+# function all_reduce!(p_gq_u::AbstractArray)
+#     gq_u_1 = p_gq_u[1]
+#     for p in 2:length(p_gq_u)
+#         gq_u = p_gq_u[p]
+#         for gq in 1:length(gq_u)
+#             gq_u_1[gq] += gq_u[gq]
+#         end
+#     end
+#     for p in 2:length(p_gq_u)
+#         gq_u = p_gq_u[p]
+#         for gq in 1:length(gq_u)
+#             gq_u[gq] = gq_u_1[gq]
+#         end
+#     end
+# end
 
-function all_reduce!(p_gq_u::PA.DebugArray)
-    all_reduce!(p_gq_u.items)
-end
+# function all_reduce!(p_gq_u::PA.DebugArray)
+#     all_reduce!(p_gq_u.items)
+# end
 
-function all_reduce!(p_gq_u::PA.MPIArray)
-    buf = p_gq_u.item
-    op = +
-    comm = p_gq_u.comm
-    MPI.Allreduce!(buf,op,comm)
-    p_gq_u
-end
+# function all_reduce!(p_gq_u::PA.MPIArray)
+#     buf = p_gq_u.item
+#     op = +
+#     comm = p_gq_u.comm
+#     MPI.Allreduce!(buf,op,comm)
+#     p_gq_u
+# end
 
 function rhs_I!(setup, gn_ln_zl)
     (;fq_fn_I, gf_fn_gn, gq_ln_zl_tilde, fn_ln_zl, fq_ln_zl_tilde,ngf)= setup
@@ -265,7 +260,6 @@ function rhs_Zn!(setup, dz_curr, z_prev, z_curr)
 end     
     
 
-# It is a good idea to measure the time for all lines
 function rhs!(duz,uz, p_setup, elap_rhs)
     elap_rhs[1] = @elapsed begin 
         num_layers = PA.getany(map(setup->setup.num_layers, p_setup))
@@ -289,81 +283,4 @@ function rhs!(duz,uz, p_setup, elap_rhs)
         end     
     end  
 end
-
-function main(backend,np,nx,ny,num_layers, title)
-    ranks = backend(1:np) # creates a partitioned representation of the ranks /process IDs
-
-    # Setup
-    elap_setup = zeros(2)
-    elap_setup[1] = @elapsed p_setup_on_main = PA.map_main(ranks) do _
-                                prepare_setups_on_main(np,nx,ny,num_layers)
-                             end
-    elap_setup[2] = @elapsed p_setup = PA.scatter(p_setup_on_main)
-
-    mem = Base.summarysize(p_setup)
-
-    # Initial condition
-    ngn = PA.getany(map(setup->setup.ngn,p_setup))
-    gn_partition = PA.uniform_partition(ranks, np, ngn)
-    p_ln_u0  = map(setup_ln_u0, p_setup)
-    p_ln_z0 = map(setup_ln_z0, p_setup, p_ln_u0) 
-    
-    u0 = PA.PVector(p_ln_u0, gn_partition)
-    u = similar(u0)
-    du = similar(u0)
-    
-    p_z0_all = [map(copy, p_ln_z0) for _ in 1:num_layers]
-    z_layers = [map(copy, p_z0_all[layer]) for layer in 1:num_layers]
-    dz_layers = [map(dz->zero(dz), p_z0_all[layer]) for layer in 1:num_layers]
-    
-    uz = ArrayPartition(u, z_layers...)
-    duz = ArrayPartition(du, dz_layers...)
-
-    nr = 1
-    r_elap_rhs = [zeros(8) for _ in 1:nr]
-    for r in 1:nr
-        elap_rhs = r_elap_rhs[r]
-
-        copy!(u,u0)
-
-        rhs!(duz,uz,p_setup,elap_rhs)
-    end
-
-    elap = Dict{Symbol,Vector{Vector{Float64}}}()
-    elap[:setup] = [elap_setup]
-    elap[:rhs] = r_elap_rhs
-    elap[:mem] = [[mem]]
-    p_elap_main = PA.gather(map(_->elap,ranks))
-    PA.map_main(p_elap_main) do p_elap
-        open("$title.json", "w") do io
-            JSON.print(io, p_elap)
-        end
-    end
-    # return duz
-    title
-end
-
-function title(nx,ny,np)
-   "results_nx$(nx)ny$(ny)np$np"
-end
-
-function main_mpi(nx,ny)
-    PA.with_mpi() do backend
-        comm = MPI.COMM_WORLD
-        np = MPI.Comm_size(comm)
-        main(backend,np,3,3,"warmup")
-        MPI.Barrier(comm)
-        main(backend,np,nx,ny,title(nx,ny,np))
-    end
-end
-
-function main_debug(nx,ny,np,num_layers)
-    PA.with_debug() do backend
-        #return main(backend,np,nx,ny,num_layers,"debug")
-        main(backend,np,nx,ny,num_layers,"debug")
-    end
-end
-
-main_debug(60,60,3,2)
-
 
