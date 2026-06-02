@@ -319,12 +319,17 @@ function main(backend,np,nx,ny,num_layers, title)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
-    nr = 1
+    nr = 10
     r_elap_rhs = [zeros(8) for _ in 1:nr]
     for r in 1:nr
-        elap_rhs = r_elap_rhs[r]
 
+        # reset the repetition
+        elap_rhs = r_elap_rhs[r]
         copy!(u,u0)
+
+        for layer in eachindex(z_layers)
+            foreach(copy!, z_layers[layer], p_z0_all[layer])
+        end
 
         rhs!(duz,uz,p_setup,elap_rhs)
     end
@@ -334,13 +339,13 @@ function main(backend,np,nx,ny,num_layers, title)
     elap[:rhs] = r_elap_rhs
     elap[:mem] = [[mem]]
     p_elap_main = PA.gather(map(_->elap,ranks))
+    file_title = title(nx, ny, np)
     PA.map_main(p_elap_main) do p_elap
-        open("$title.json", "w") do io
+        open("data/exp_raw/parallel_time_10x/$file_title.json", "w") do io
             JSON.print(io, p_elap)
         end
     end
-    # return duz
-    title
+    file_title
 end
 
 function title(nx,ny,np)
@@ -359,11 +364,7 @@ end
 
 function main_debug(nx,ny,np,num_layers)
     PA.with_debug() do backend
-        #return main(backend,np,nx,ny,num_layers,"debug")
-        main(backend,np,nx,ny,num_layers,"debug")
+        main(backend,np,nx,ny,num_layers,title)
     end
 end
-
-main_debug(60,60,3,2)
-
 
