@@ -2,7 +2,7 @@ using JSON
 using GLMakie
 using LinearAlgebra
 
-include("FEM.jl")
+include(srcdir("FEM.jl"))
 
 function visualize_first_and_last(datafile, L)
     """Visualizes U at the first timestep and at the last timestep"""

@@ -3,7 +3,6 @@ Functions needed for FEM method
 """
 
 import GalerkinToolkit as GT
-import GLMakie 
 using RecursiveArrayTools
 using SparseArrays
 import Gmsh
