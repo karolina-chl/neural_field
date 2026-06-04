@@ -411,7 +411,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# data and plots folders 
+# data folders 
 data/*
 
 
