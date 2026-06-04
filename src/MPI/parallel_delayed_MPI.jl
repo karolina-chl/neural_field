@@ -352,13 +352,13 @@ function title(nx,ny,np)
    "results_nx$(nx)ny$(ny)np$np"
 end
 
-function main_mpi(nx,ny, num_layers)
+function main_mpi(nx,ny)
     PA.with_mpi() do backend
         comm = MPI.COMM_WORLD
         np = MPI.Comm_size(comm)
-        main(backend,np,3,3,num_layers,title)
+        main(backend,np,3,3,"warmup")
         MPI.Barrier(comm)
-        main(backend,np,nx,ny,num_layers,title) 
+        main(backend,np,nx,ny,title(nx,ny,np))
     end
 end
 
@@ -367,5 +367,3 @@ function main_debug(nx,ny,np,num_layers)
         main(backend,np,nx,ny,num_layers,title)
     end
 end
-
-main_mpi(3,3,2)
