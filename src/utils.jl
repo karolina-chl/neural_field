@@ -1,7 +1,5 @@
 using DrWatson
 using BenchmarkTools
-using Profile
-using ProfileView
 using RecursiveArrayTools: ArrayPartition
 import GalerkinToolkit as GT
 
