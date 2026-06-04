@@ -1,7 +1,5 @@
 using DrWatson
 import GalerkinToolkit as GT
-#using Makie
-using GLMakie
 import DifferentialEquations as DE
 import ProgressMeter as PM
 import JSON
