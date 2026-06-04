@@ -10,7 +10,7 @@ using Statistics
 @quickactivate "neural_field"
 include(srcdir("parallel_delayed.jl"))
 
-# np = 1
+np = 1
 
 # # generate the data 
 num_elements = [16,32,64,128,256,512,1024,2048]
@@ -55,7 +55,7 @@ ax = Axis(fig[1,1];
 )
 lines!(ax, num_elements, mem_MB, color = :purple)
 scatter!(ax, num_elements, mem_MB, color = :purple)
-save("plots/memory_scaling.png",fig)
+save("plots/memory_scaling_plot.png",fig)
 
 # extract the data - time 
 time_arr = Float64[]
@@ -85,4 +85,4 @@ ax = Axis(fig[1,1];
 )
 lines!(ax, num_elements[2:8], time_arr_round, color = :purple)
 scatter!(ax, num_elements[2:8], time_arr_round, color = :purple)
-save("plots/time_scaling.png",fig)
+save("plots/time_scaling_plot.png",fig)

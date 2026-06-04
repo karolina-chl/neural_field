@@ -368,4 +368,4 @@ function main_debug(nx,ny,np,num_layers)
     end
 end
 
-main_mpi(3,3,2)
+main_mpi(5,5,2)
