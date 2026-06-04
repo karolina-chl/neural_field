@@ -367,5 +367,3 @@ function main_debug(nx,ny,np,num_layers)
         main(backend,np,nx,ny,num_layers,title)
     end
 end
-
-main_mpi(3,3,2)
