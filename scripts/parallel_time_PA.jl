@@ -10,7 +10,7 @@ using Statistics
 @quickactivate "neural_field"
 include(srcdir("parallel_delayed.jl"))
 
-# np = 1
+np = 1
 
 # # generate the data 
 num_elements = [16,32,64,128,256,512,1024,2048]

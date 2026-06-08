@@ -414,6 +414,9 @@ $RECYCLE.BIN/
 # data folders 
 data/*
 
+# mp4
+*.mp4
+
 
 ## Acknowledgements
 # Many thanks to `https://gitignore.io/`, written and maintained by Joe Blau, which contributed much material to this gitignore file.
