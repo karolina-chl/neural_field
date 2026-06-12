@@ -290,7 +290,7 @@ function rhs!(duz,uz, p_setup, elap_rhs)
     end  
 end
 
-function main(backend,np,nx,ny,num_layers, title)
+function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     ranks = backend(1:np) # creates a partitioned representation of the ranks /process IDs
 
     # Setup
@@ -339,13 +339,15 @@ function main(backend,np,nx,ny,num_layers, title)
     elap[:rhs] = r_elap_rhs
     elap[:mem] = [[mem]]
     p_elap_main = PA.gather(map(_->elap,ranks))
-    file_title = title(nx, ny, np)
-    PA.map_main(p_elap_main) do p_elap
-        open("data/exp_raw/parallel_time_10x/$file_title.json", "w") do io
-            JSON.print(io, p_elap)
+    if save == true
+        file_title = file_name(nx, ny, np)
+        PA.map_main(p_elap_main) do p_elap
+            open("data/exp_raw/mpi_exp/test$file_title.json", "w") do io
+                JSON.print(io, p_elap)
+            end
         end
-    end
-    file_title
+        println("Experiment finished.Results saved as $file_title")
+    end     
 end
 
 function title(nx,ny,np)
@@ -356,14 +358,16 @@ function main_mpi(nx,ny, num_layers)
     PA.with_mpi() do backend
         comm = MPI.COMM_WORLD
         np = MPI.Comm_size(comm)
-        main(backend,np,3,3,num_layers,title)
+        main(backend,np,3,3,num_layers;save = false, file_name = title)
         MPI.Barrier(comm)
-        main(backend,np,nx,ny,num_layers,title) 
+        main(backend,np,nx,ny,num_layers;save = true, file_name = title) 
     end
 end
 
 function main_debug(nx,ny,np,num_layers)
     PA.with_debug() do backend
-        main(backend,np,nx,ny,num_layers,title)
+        main(backend,np,nx,ny,num_layers;save = true, file_name = title)
     end
 end
+
+main_mpi(3,3,2)
