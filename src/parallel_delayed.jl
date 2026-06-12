@@ -340,9 +340,9 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     elap[:mem] = [[mem]]
     p_elap_main = PA.gather(map(_->elap,ranks))
     if save == true
-        file_title = file_name(nx, ny, np)
+        file_title = file_name(nx, ny, np, num_layers)
         PA.map_main(p_elap_main) do p_elap
-            open("data/exp_raw/mpi_exp/test$file_title.json", "w") do io
+            open("data/exp_raw/mpi_exp/$file_title.json", "w") do io
                 JSON.print(io, p_elap)
             end
         end
@@ -350,8 +350,8 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     end     
 end
 
-function title(nx,ny,np)
-   "results_nx$(nx)ny$(ny)np$np"
+function title(nx,ny,np,num_layers)
+   "results_nx$(nx)ny$(ny)np$(np)num_layers$num_layers"
 end
 
 function main_mpi(nx,ny, num_layers)
