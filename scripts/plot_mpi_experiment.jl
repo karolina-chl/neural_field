@@ -13,7 +13,7 @@ include(srcdir("data_processing.jl"))
 
 function plot_strong_scaling_nodes()
     proc_list = [1,2,4,8,16,32,64]
-    nxny_arr = [30,60]
+    nxny_arr = [30,60,90]
     num_reps = 10
     num_layers = 2
     best_time_arr_combined = []
@@ -98,7 +98,7 @@ end
 ############################
 
 function plot_efficiency_nodes()
-    nxny_arr = [30,60]
+    nxny_arr = [30,60,90]
     num_layers = 2
     num_reps = 10
     proc_list = [1,2,4,8,16,32,64]
@@ -116,9 +116,9 @@ function plot_efficiency_nodes()
         xlabel = "Number of processors", 
         ylabel = "Efficiency", 
         xticks = proc_list,
-        yticks = 0:0.2:1.2,
+        yticks = 0:0.2:1.6,
         xscale = log2,
-        limits = (nothing, (0, 1.2))
+        limits = (nothing, (0, 1.6))
     )
 
     perfect_eff = [1 for _ in proc_list]
@@ -150,7 +150,7 @@ function plot_efficiency_layers()
     fig = Figure()
     ax = Axis(
         fig[1,1]; 
-        title = "Efficiency - nodes", 
+        title = "Efficiency - layers", 
         xlabel = "Number of processors", 
         ylabel = "Efficiency", 
         xticks = proc_list,
@@ -175,95 +175,174 @@ end
 # Computation/Communication plot 
 ############################
 
-procs_arr = [1,2,4,8,16,32,64] 
-comm_arr_full = []
-comp_arr_full = []
-num_reps = 10
+function plot_comunication_vs_computation_nodes(nx)
+    procs_arr = [1,2,4,8,16,32,64] 
+    comm_arr_full = []
+    comp_arr_full = []
+    num_reps = 10
 
-for proc in procs_arr
-    data_eff = JSON.parsefile("data/exp_raw/mpi_exp/results_nx30ny30np$(proc)num_layers2.json")
-    rhs_times = [entry["rhs"] for entry in data_eff]
-    # extract communication
-    communication_arr = [Float64[] for _ in 1:proc] 
-    for i in 1:proc
-        for rep in 1:num_reps
-        comm = rhs_times[i][rep][7]
-        push!(communication_arr[i], comm)
+    for proc in procs_arr
+        data_eff = JSON.parsefile("data/exp_raw/mpi_exp/results_nx$(nx)ny$(nx)np$(proc)num_layers2.json")
+        rhs_times = [entry["rhs"] for entry in data_eff]
+        # extract communication
+        communication_arr = [Float64[] for _ in 1:proc] 
+        for i in 1:proc
+            for rep in 1:num_reps
+            comm = rhs_times[i][rep][7]
+            push!(communication_arr[i], comm)
+            end
+        end 
+        comp_arr = []
+        for num in 1:proc
+            summed = sum.(rhs_times[num]).-communication_arr[num]
+            push!(comp_arr, summed)
         end
-    end 
-    comp_arr = []
-    for num in 1:proc
-        summed = sum.(rhs_times[num]).-communication_arr[num]
-        push!(comp_arr, summed)
+        slowest_worker_comp = []
+        slowest_worker_comm = []
+        for num in 1:num_reps
+            slowest_comp = maximum(comp_arr[rank][num] for rank in 1:proc)
+            slowest_comm = maximum(communication_arr[rank][num] for rank in 1:proc)
+            push!(slowest_worker_comp, slowest_comp)
+            push!(slowest_worker_comm, slowest_comm)
+        end
+        mean_comp = median(slowest_worker_comp)
+        mean_comm = median(slowest_worker_comm)
+        push!(comm_arr_full, mean_comm)
+        push!(comp_arr_full, mean_comp)
     end
-    slowest_worker_comp = []
-    slowest_worker_comm = []
-    for num in 1:num_reps
-        slowest_comp = maximum(comp_arr[rank][num] for rank in 1:proc)
-        slowest_comm = maximum(communication_arr[rank][num] for rank in 1:proc)
-        push!(slowest_worker_comp, slowest_comp)
-        push!(slowest_worker_comm, slowest_comm)
-    end
-    mean_comp = mean(slowest_worker_comp)
-    mean_comm = mean(slowest_worker_comm)
-    push!(comm_arr_full, mean_comm)
-    push!(comp_arr_full, mean_comp)
+
+    total = comm_arr_full .+ comp_arr_full
+    ratio_comm = comm_arr_full ./total 
+    ratio_comp = comp_arr_full./total
+    total_1 = [1 for _ in total]
+
+    fig = Figure()
+
+    x = 1:length(procs_arr)
+
+    ax1 = Axis(
+        fig[1, 1],
+        xlabel = "Number of processors",
+        ylabel = "Ratio of Communication and Computation",
+        #title = "$nx",
+        xticks = (x, string.(procs_arr))
+    )
+
+
+    barplot!(
+        ax1,
+        x,
+        ratio_comp,
+        color = :steelblue,
+        label = "Computation"
+    )
+
+    barplot!(
+        ax1,
+        x,
+        total_1,
+        fillto = ratio_comp,
+        color = :orange,
+        label = "Communication"
+    )
+
+    axislegend(ax1, position = :rb)
+    save("plots/communication_vs_computation_$nx.png",fig)
 end
 
-total = comm_arr_full .+ comp_arr_full
-ratio_comm = comm_arr_full ./total 
-ratio_comp = comp_arr_full./total
-total_1 = [1 for _ in total]
+function plot_comunication_vs_computation_layers(layer)
+    procs_arr = [1,2,4,8,16,32,64] 
+    comm_arr_full = []
+    comp_arr_full = []
+    num_reps = 10
 
-fig = Figure(size = (1000, 450))
+    for proc in procs_arr
+        data_eff = JSON.parsefile("data/exp_raw/mpi_exp/results_nx50ny50np$(proc)num_layers$(layer).json")
+        rhs_times = [entry["rhs"] for entry in data_eff]
+        # extract communication
+        communication_arr = [Float64[] for _ in 1:proc] 
+        for i in 1:proc
+            for rep in 1:num_reps
+            comm = rhs_times[i][rep][7]
+            push!(communication_arr[i], comm)
+            end
+        end 
+        comp_arr = []
+        for num in 1:proc
+            summed = sum.(rhs_times[num]).-communication_arr[num]
+            push!(comp_arr, summed)
+        end
+        slowest_worker_comp = []
+        slowest_worker_comm = []
+        for num in 1:num_reps
+            slowest_comp = maximum(comp_arr[rank][num] for rank in 1:proc)
+            slowest_comm = maximum(communication_arr[rank][num] for rank in 1:proc)
+            push!(slowest_worker_comp, slowest_comp)
+            push!(slowest_worker_comm, slowest_comm)
+        end
+        mean_comp = median(slowest_worker_comp)
+        mean_comm = median(slowest_worker_comm)
+        push!(comm_arr_full, mean_comm)
+        push!(comp_arr_full, mean_comp)
+    end
 
-x = 1:length(procs_arr)
+    total = comm_arr_full .+ comp_arr_full
+    ratio_comm = comm_arr_full ./total 
+    ratio_comp = comp_arr_full./total
+    total_1 = [1 for _ in total]
 
-ax1 = Axis(
-    fig[1, 1],
-    xlabel = "Number of processors",
-    ylabel = "Ratio of Compunication and Computation",
-    title = "Computation vs communication time",
-    xticks = (x, string.(procs_arr))
-)
+    fig = Figure()
+
+    x = 1:length(procs_arr)
+
+    ax1 = Axis(
+        fig[1, 1],
+        xlabel = "Number of processors",
+        ylabel = "Ratio of Communication and Computation",
+        #title = "$nx",
+        xticks = (x, string.(procs_arr))
+    )
 
 
-barplot!(
-    ax1,
-    x,
-    ratio_comp,
-    color = :steelblue,
-    label = "Computation"
-)
+    barplot!(
+        ax1,
+        x,
+        ratio_comp,
+        color = :steelblue,
+        label = "Computation"
+    )
 
-barplot!(
-    ax1,
-    x,
-    total_1,
-    fillto = ratio_comp,
-    color = :orange,
-    label = "Communication"
-)
+    barplot!(
+        ax1,
+        x,
+        total_1,
+        fillto = ratio_comp,
+        color = :orange,
+        label = "Communication"
+    )
 
-axislegend(ax1, position = :rt)
+    axislegend(ax1, position = :rb)
+    save("plots/communication_vs_computation_$(layer)layers.png",fig)
+end
 
-ax2 = Axis(
-    fig[1, 2], 
-    xlabel = "Number of processors",
-    ylabel = "Time [s]",
-    title = "Computation vs communication time",
-    xticks = procs_arr, 
-    xscale = log2
-)
 
-lines!(ax2, procs_arr, comm_arr_full, label = "Communication")
-scatter!(ax2, procs_arr, comm_arr_full)
-lines!(ax2, procs_arr, comp_arr_full, label = "Computation")
-scatter!(ax2, procs_arr, comp_arr_full)
+# ax2 = Axis(
+#     fig[1, 2], 
+#     xlabel = "Number of processors",
+#     ylabel = "Time [s]",
+#     title = "Computation vs communication time",
+#     xticks = procs_arr, 
+#     xscale = log2
+# )
 
-axislegend(ax2, position = :rt)
+# lines!(ax2, procs_arr, comm_arr_full, label = "Communication")
+# scatter!(ax2, procs_arr, comm_arr_full)
+# lines!(ax2, procs_arr, comp_arr_full, label = "Computation")
+# scatter!(ax2, procs_arr, comp_arr_full)
 
-save("plots/communication_vs_computation_30.png",fig)
+# axislegend(ax2, position = :rt)
+
+
 
 # plot all 
 
@@ -271,3 +350,9 @@ plot_strong_scaling_nodes()
 plot_strong_scaling_layers()
 plot_efficiency_nodes()
 plot_efficiency_layers()
+plot_comunication_vs_computation_nodes(30)
+plot_comunication_vs_computation_nodes(60)
+plot_comunication_vs_computation_nodes(90)
+plot_comunication_vs_computation_layers(2)
+plot_comunication_vs_computation_layers(4)
+plot_comunication_vs_computation_layers(8)
