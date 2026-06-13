@@ -6,7 +6,7 @@ export JULIA_DEPOT_PATH="/var/scratch/tln716/julia_depot"
 mkdir -p data/exp_raw/mpi_exp
 
 power_arr=(0 1 2 3 4 5)
-proc_arr=(2 4 8 16 32 64)
+proc_arr=(1 2 4 8 16 32 64)
 
 for i in ${power_arr[@]}
 do
