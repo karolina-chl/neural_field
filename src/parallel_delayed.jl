@@ -8,7 +8,7 @@ using RecursiveArrayTools: ArrayPartition
 
 include(srcdir("equations.jl"))
 
-function prepare_setups_on_main(np,nx,ny, num_layers)
+function prepare_setups_on_main(np,nx,ny,num_layers)
     setup = do_setup(nx,ny, num_layers)
     (;gn_x) = setup
     ngn = length(gn_x) # number of global nodes 
@@ -18,6 +18,21 @@ function prepare_setups_on_main(np,nx,ny, num_layers)
         gn_ln = PA.global_to_local(nids)
         restrict_setup(setup,ln_gn,gn_ln)
     end
+end
+
+function prepare_setup_on_rank(rank, np, nx, ny, num_layers)
+    setup = do_setup(nx, ny, num_layers)
+
+    (; gn_x) = setup
+    ngn = length(gn_x)
+
+    gn_partition_sequential = PA.uniform_partition(1:np, np, ngn)
+
+    nids = gn_partition_sequential[rank]
+    ln_gn = PA.local_to_global(nids)
+    gn_ln = PA.global_to_local(nids)
+
+    return restrict_setup(setup, ln_gn, gn_ln)
 end
 
 function do_setup(nx, ny, num_layers)
@@ -294,11 +309,11 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     ranks = backend(1:np) # creates a partitioned representation of the ranks /process IDs
 
     # Setup
-    elap_setup = zeros(2)
-    elap_setup[1] = @elapsed p_setup_on_main = PA.map_main(ranks) do _
-                                prepare_setups_on_main(np,nx,ny,num_layers)
-                             end
-    elap_setup[2] = @elapsed p_setup = PA.scatter(p_setup_on_main)
+    elap_setup = zeros(1)
+    
+    elap_setup[1] = @elapsed p_setup = map(ranks) do rank
+        prepare_setup_on_rank(rank, np, nx, ny, num_layers)
+    end
 
     mem = Base.summarysize(p_setup)
 
@@ -306,15 +321,13 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     ngn = PA.getany(map(setup->setup.ngn,p_setup))
     gn_partition = PA.uniform_partition(ranks, np, ngn)
     p_ln_u0  = map(setup_ln_u0, p_setup)
-    p_ln_z0 = map(setup_ln_z0, p_setup, p_ln_u0) 
     
     u0 = PA.PVector(p_ln_u0, gn_partition)
     u = similar(u0)
     du = similar(u0)
     
-    p_z0_all = [map(copy, p_ln_z0) for _ in 1:num_layers]
-    z_layers = [map(copy, p_z0_all[layer]) for layer in 1:num_layers]
-    dz_layers = [map(dz->zero(dz), p_z0_all[layer]) for layer in 1:num_layers]
+    z_layers = [map(setup_ln_z0, p_setup, p_ln_u0) for _ in 1:num_layers]
+    dz_layers = [map(z -> zero(z), z_layers[layer]) for layer in 1:num_layers]
     
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
@@ -326,10 +339,6 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
         # reset the repetition
         elap_rhs = r_elap_rhs[r]
         copy!(u,u0)
-
-        for layer in eachindex(z_layers)
-            foreach(copy!, z_layers[layer], p_z0_all[layer])
-        end
 
         rhs!(duz,uz,p_setup,elap_rhs)
     end

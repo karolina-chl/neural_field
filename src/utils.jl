@@ -95,15 +95,13 @@ function main_test(backend,np,nx,ny,num_layers, title)
     ngn = PA.getany(map(setup->setup.ngn,p_setup))
     gn_partition = PA.uniform_partition(ranks, np, ngn)
     p_ln_u0  = map(setup_ln_u0, p_setup)
-    p_ln_z0 = map(setup_ln_z0, p_setup, p_ln_u0) 
     
     u0 = PA.PVector(p_ln_u0, gn_partition)
     u = similar(u0)
     du = similar(u0)
     
-    p_z0_all = [map(copy, p_ln_z0) for _ in 1:num_layers]
-    z_layers = [map(copy, p_z0_all[layer]) for layer in 1:num_layers]
-    dz_layers = [map(dz->zero(dz), p_z0_all[layer]) for layer in 1:num_layers]
+    z_layers = [map(setup_ln_z0, p_setup, p_ln_u0) for _ in 1:num_layers]
+    dz_layers = [map(z -> zero(z), z_layers[layer]) for layer in 1:num_layers]
     
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
