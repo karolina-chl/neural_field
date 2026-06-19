@@ -286,7 +286,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
-    nr = 1
+    nr = 10
     r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
 

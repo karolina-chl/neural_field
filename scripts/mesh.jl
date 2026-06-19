@@ -144,5 +144,7 @@ function plot_two_meshes_with_shared_legend(nx, ny)
     fig
 end
 
-fig = plot_two_meshes_with_shared_legend(5, 5)
-save("plots/mesh.png",fig)
+# fig = plot_two_meshes_with_shared_legend(5, 5)
+# save("plots/mesh.png",fig)
+
+create_mesh(9, 9, 1, 2)

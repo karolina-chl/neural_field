@@ -13,8 +13,8 @@ do
     for proc in ${proc_arr[@]}
     do
         NP=$proc
-        NX=9
-        NY=9
+        NX=19
+        NY=19
         NUM_LAYERS=$layer
 
         sbatch --ntasks=$NP scripts/single_run_mpi.sh $NX $NY $NUM_LAYERS
