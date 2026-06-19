@@ -5,21 +5,8 @@ import MPI; MPI.Init()
 import JSON
 using LinearAlgebra
 using RecursiveArrayTools: ArrayPartition
-using ProfileView: @profview
 
 include(srcdir("equations.jl"))
-
-# function prepare_setups_on_main(np,nx,ny,num_layers)
-#     setup = do_setup(nx,ny, num_layers)
-#     (;gn_x) = setup
-#     ngn = length(gn_x) # number of global nodes 
-#     gn_partition_sequential = PA.uniform_partition(1:np,np,ngn)
-#     p_fem_setup = map(gn_partition_sequential) do nids
-#         ln_gn = PA.local_to_global(nids)
-#         gn_ln = PA.global_to_local(nids)
-#         restrict_setup(setup,ln_gn,gn_ln)
-#     end
-# end
 
 function prepare_setup_on_rank(rank, np, nx, ny, num_layers)
     setup = mesh_setup(nx, ny)
