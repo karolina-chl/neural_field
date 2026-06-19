@@ -13,15 +13,14 @@ include(srcdir("data_processing.jl"))
 
 function plot_strong_scaling_nodes()
     proc_list = [1,2,4,8,16,32,64]
-    nxny_arr = [30,60,90]
-    num_reps = 10
+    nxny_arr = [9,19,39,79]
+    num_reps = 100
     num_layers = 2
     best_time_arr_combined = []
 
     for nx in nxny_arr
         best_time_arr = get_strong_scaling_data(proc_list, num_reps, nx, nx, num_layers)
-        best_time_arr_round = round.(best_time_arr, digits = 2)
-        push!(best_time_arr_combined, best_time_arr_round)
+        push!(best_time_arr_combined, best_time_arr)
     end 
 
     fig = Figure()
@@ -36,33 +35,31 @@ function plot_strong_scaling_nodes()
     )
 
     for entry in eachindex(nxny_arr)
+        perfect_label = entry == firstindex(nxny_arr) ? "Perfect scaling" : nothing
+
         nx = nxny_arr[entry]
         time_arr = best_time_arr_combined[entry]
 
         perfect_arr = time_arr[1] ./ proc_list
-        num_el = nx*nx
-        lines!(ax, proc_list, time_arr, label = "Actual scaling, num_elements =$num_el")
-        scatter!(ax, proc_list, time_arr)
-
-        perfect_label = entry == firstindex(nxny_arr) ? "Perfect scaling" : nothing
         lines!(ax, proc_list, perfect_arr, linestyle = :dash, color = :gray,label = perfect_label)
+        lines!(ax, proc_list, time_arr, label = "nx = $(nx)")
+        scatter!(ax, proc_list, time_arr)
     end
 
-    axislegend(ax)
+    Legend(fig[1, 2], ax)
     save("plots/strong_scaling_nodes.png",fig)
 end
 
 function plot_strong_scaling_layers()
     proc_list = [1,2,4,8,16,32,64]
-    nx = ny = 50
-    num_reps = 10
-    num_layers_arr = [2,4,8]
+    nx = ny = 9
+    num_reps = 100
+    num_layers_arr = [2,32,512]
     best_time_arr_combined = []
 
     for layer in num_layers_arr
         best_time_arr = get_strong_scaling_data(proc_list, num_reps, nx, ny, layer)
-        best_time_arr_round = round.(best_time_arr, digits = 2)
-        push!(best_time_arr_combined, best_time_arr_round)
+        push!(best_time_arr_combined, best_time_arr)
     end 
 
     fig = Figure()
@@ -98,9 +95,9 @@ end
 ############################
 
 function plot_efficiency_nodes()
-    nxny_arr = [30,60,90]
+    nxny_arr = [9,19,39,79]
     num_layers = 2
-    num_reps = 10
+    num_reps = 100
     proc_list = [1,2,4,8,16,32,64]
     efficiency_combined = []
     for nx in nxny_arr
@@ -136,9 +133,9 @@ function plot_efficiency_nodes()
 end 
 
 function plot_efficiency_layers()
-    nx = ny = 50
-    num_layers = [2,4,8]
-    num_reps = 10
+    nx = ny = 9
+    num_layers = [2,32,512]
+    num_reps = 100
     proc_list = [1,2,4,8,16,32,64]
     efficiency_combined = []
     for layer in num_layers
@@ -177,14 +174,14 @@ end
 
 function plot_comunication_vs_computation_nodes(nx)
     proc_list = [1,2,4,8,16,32,64] 
-    num_reps = 10
+    num_reps = 100
     num_layers = 2
 
     comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,num_layers)
 
     total = comm_arr_full .+ comp_arr_full
     ratio_comp = comp_arr_full./total
-    total_1 = [1 for _ in total]
+    total_1 = ones(length(total))
 
     fig = Figure()
 
@@ -222,14 +219,14 @@ end
 
 function plot_comunication_vs_computation_layers(layer)
     proc_list = [1,2,4,8,16,32,64] 
-    num_reps = 10
-    nx = 50
+    num_reps = 100
+    nx = 9
 
-    comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,num_layers)
+    comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,layer)
     
     total = comm_arr_full .+ comp_arr_full
     ratio_comp = comp_arr_full./total
-    total_1 = [1 for _ in total]
+    total_1 = ones(length(total))
 
     fig = Figure()
 
@@ -271,9 +268,11 @@ plot_strong_scaling_nodes()
 plot_strong_scaling_layers()
 plot_efficiency_nodes()
 plot_efficiency_layers()
-plot_comunication_vs_computation_nodes(30)
-plot_comunication_vs_computation_nodes(60)
-plot_comunication_vs_computation_nodes(90)
+plot_comunication_vs_computation_nodes(9)
+plot_comunication_vs_computation_nodes(19)
+plot_comunication_vs_computation_nodes(39)
+plot_comunication_vs_computation_nodes(79)
 plot_comunication_vs_computation_layers(2)
-plot_comunication_vs_computation_layers(4)
-plot_comunication_vs_computation_layers(8)
+plot_comunication_vs_computation_layers(32)
+plot_comunication_vs_computation_layers(512)
+#plot_comunication_vs_computation_layers(8192)
