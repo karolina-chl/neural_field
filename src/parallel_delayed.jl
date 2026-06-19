@@ -158,92 +158,6 @@ function all_reduce!(p_gn_u::PA.MPIArray)
     p_gn_u
 end
 
-# function rhs_I!(setup, gn_ln_zl)
-#     (;fq_fn_I, gf_fn_gn, gq_ln_zl_tilde, fn_ln_zl, fq_ln_zl_tilde,ngf)= setup
-
-#     nfq, nfn = size(fq_fn_I)
-#     nln = size(gn_ln_zl, 2)
-
-#     fill!(gq_ln_zl_tilde, 0)
-
-#     for gf in 1:ngf # loop over all faces
-#         fn_gn = gf_fn_gn[gf]
-
-#         for fn in 1:nfn
-#             gn = fn_gn[fn]
-#             for ln in 1:nln
-#                 fn_ln_zl[fn,ln] = gn_ln_zl[gn, ln]
-#             end     
-#         end     
-#         mul!(fq_ln_zl_tilde, fq_fn_I, fn_ln_zl)
-        
-#         # store z_L tilde at the global quadrature locations 
-#         for fq in 1:nfq
-#             gq = (gf-1)*nfq + fq # converts local quadrature indeks to global quatrature index
-#             for ln in 1:nln
-#                 gq_ln_zl_tilde[gq, ln] = fq_ln_zl_tilde[fq, ln]
-#             end     
-#         end
-#     end
-# end
-
-# function rhs_W!(setup, ln_du, ln_u)
-#     (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, gq_ln_zl_tilde, gn_u, fq_ln_zl_tilde) = setup
-    
-#     fill!(ln_du,0)
-#     fill!(gn_u, 0)
-
-#     nln = size(fq_ln_zl_tilde,2)
-#     nfq, nfn = size(fq_fn_I)
-#     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
-#     zy = zero(Ty) # zero coordinate vectore
-#     zJt = zero(zy*transpose(zy)) # zero matrix-like object for the Jacobian transpose 
-#     fn_y = zeros(Ty,nfn) # physical coordinates of the nodes of one face 
-#     fq_y = zeros(Ty,nfq) # physical coordinates of the quadrature points of one face
-#     fq_dy = zeros(nfq) # physical quadrature weights for one face.
-#     #   ngq = ngf * nfq # do we need this?
-
-#     for ln in 1:nln
-#         for gf in 1:ngf
-#             fn_gn = gf_fn_gn[gf]
-#             for fn in 1:nfn
-#                 gn = fn_gn[fn]
-#                 fn_y[fn] = gn_x[gn]
-#             end
-#             for fq in 1:nfq
-#                 y = zy
-#                 for fn in 1:nfn
-#                     y += fq_fn_I[fq,fn]*fn_y[fn]
-#                 end
-#                 fq_y[fq] = y
-#             end
-#             for fq in 1:nfq
-#                 Jt = zJt
-#                 for fn in 1:nfn
-#                     Jt += fn_y[fn]*fq_fn_dI[fq,fn]
-#                 end
-#                 refdy = fq_refdy[fq]
-#                 fq_dy[fq] = abs(det(Jt))*refdy
-#             end
-#             for fq in 1:nfq
-#                 y = fq_y[fq]
-#                 x = ln_x[ln]
-#                 dy = fq_dy[fq]
-                
-#                 # calculate an adequate W entry for a given quadrature point and given local node
-#                 wnq = w(x,y)*dy 
-#                 gq = (gf - 1) * nfq + fq # where does this equation come from?
-#                 zqn = gq_ln_zl_tilde[gq, ln]  
-#                 ln_du[ln] += wnq * f(zqn)
-#             end
-#         end
-#         ln_du[ln] -= ln_u[ln]
-#         # writing global u values to the gn_u (for all reduce to work properly)
-#         gn = ln_gn[ln]
-#         gn_u[gn] = ln_u[ln]
-#     end  
-# end
-
 function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
     (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, gn_u, fq_ln_zl_tilde, fn_ln_zl) = setup
 
@@ -255,8 +169,6 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
     fill!(ln_du,0)
     fill!(gn_u, 0)
 
-    nln = size(fq_ln_zl_tilde,2)
-    nfq, nfn = size(fq_fn_I)
     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
     zy = zero(Ty) # zero coordinate vectore
     zJt = zero(zy*transpose(zy)) # zero matrix-like object for the Jacobian transpose 
@@ -292,7 +204,6 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
             for ln in 1:nln
                 x = ln_x[ln]
                 dy = fq_dy[fq] 
-                # calculate an adequate W entry for a given quadrature point and given local node
                 wnq = w(x,y)*dy
                 zqn = fq_ln_zl_tilde[fq, ln]  
                 ln_du[ln] += wnq * f(zqn)
@@ -306,7 +217,8 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
         gn = ln_gn[ln]
         gn_u[gn] = ln_u[ln]
     end    
-end     
+end 
+
 
 function rhs_Z1!(setup, gn_u, gn_ln_z1, gn_ln_dz1) 
     (;gn_x, ln_x, num_layers) = setup
@@ -345,14 +257,14 @@ function rhs!(duz,uz, p_setup, elap_rhs)
         du = duz.x[1]
         dz_all = duz.x[2:num_layers + 1]
         u = uz.x[1]
-    end 
 
-    elap_rhs[2] = @elapsed p_ln_du = PA.local_values(du) 
-    elap_rhs[3] = @elapsed p_ln_u = PA.local_values(u)
-    elap_rhs[4] = @elapsed foreach(rhs_IW!, p_setup, zl, p_ln_du, p_ln_u)
-    elap_rhs[5] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
-    elap_rhs[6] = @elapsed all_reduce!(p_gn_u)
-    elap_rhs[7] = @elapsed begin 
+        p_ln_du = PA.local_values(du)
+        p_ln_u = PA.local_values(u)
+    end  
+    elap_rhs[2] = @elapsed foreach(rhs_IW!, p_setup, zl, p_ln_du, p_ln_u)
+    elap_rhs[3] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
+    elap_rhs[4] = @elapsed all_reduce!(p_gn_u)
+    elap_rhs[5] = @elapsed begin 
         foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
         for layer in 2:num_layers
             foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
