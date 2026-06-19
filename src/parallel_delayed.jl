@@ -300,7 +300,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     duz = ArrayPartition(du, dz_layers...)
 
     nr = 1
-    r_elap_rhs = [zeros(7) for _ in 1:nr]
+    r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
 
         # reset the repetition
@@ -345,9 +345,3 @@ function main_debug(nx,ny,np,num_layers)
         main(backend,np,nx,ny,num_layers;save = true, file_name = title)
     end
 end
-
-################# Test 
-
-main_debug(2,2,1,2)
-# #@profview main_debug(10,10,1,2)
-@time main_debug(10,10,1,2)
