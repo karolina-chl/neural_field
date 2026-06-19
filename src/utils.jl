@@ -75,19 +75,19 @@ end
 
 function main_debug_test(nx,ny,np,num_layers)
     PA.with_debug() do backend
-        return main_test(backend,np,nx,ny,num_layers,"debug")
+        return main_test(backend,np,nx,ny,num_layers)
     end
 end
 
-function main_test(backend,np,nx,ny,num_layers, title)
-    ranks = backend(1:np) # creates a partitioned representation of the ranks /process IDs
+function main_test(backend,np,nx,ny,num_layers; save = false, file_name = title)
+    ranks = backend(1:np)
 
     # Setup
-    elap_setup = zeros(2)
-    elap_setup[1] = @elapsed p_setup_on_main = PA.map_main(ranks) do _
-                                prepare_setups_on_main(np,nx,ny,num_layers)
-                             end
-    elap_setup[2] = @elapsed p_setup = PA.scatter(p_setup_on_main)
+    elap_setup = zeros(1)
+    
+    elap_setup[1] = @elapsed p_setup = map(ranks) do rank
+        prepare_setup_on_rank(rank, np, nx, ny, num_layers)
+    end
 
     mem = Base.summarysize(p_setup)
 
@@ -109,8 +109,9 @@ function main_test(backend,np,nx,ny,num_layers, title)
     nr = 1
     r_elap_rhs = [zeros(8) for _ in 1:nr]
     for r in 1:nr
-        elap_rhs = r_elap_rhs[r]
 
+        # reset the repetition
+        elap_rhs = r_elap_rhs[r]
         copy!(u,u0)
 
         rhs!(duz,uz,p_setup,elap_rhs)
@@ -121,12 +122,16 @@ function main_test(backend,np,nx,ny,num_layers, title)
     elap[:rhs] = r_elap_rhs
     elap[:mem] = [[mem]]
     p_elap_main = PA.gather(map(_->elap,ranks))
-    PA.map_main(p_elap_main) do p_elap
-        open("$title.json", "w") do io
-            JSON.print(io, p_elap)
+    if save == true
+        file_title = file_name(nx, ny, np, num_layers)
+        PA.map_main(p_elap_main) do p_elap
+            open("data/exp_raw/mpi_exp/$file_title.json", "w") do io
+                JSON.print(io, p_elap)
+            end
         end
+        println("Experiment finished.Results saved as $file_title")
     end
-    return duz
+    return duz     
 end
 
 function materialize_debug_pvector(u)
