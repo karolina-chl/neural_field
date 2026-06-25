@@ -8,20 +8,8 @@ using RecursiveArrayTools: ArrayPartition
 
 include(srcdir("equations.jl"))
 
-function prepare_setups_on_main(np,nx,ny,num_layers)
-    setup = do_setup(nx,ny, num_layers)
-    (;gn_x) = setup
-    ngn = length(gn_x) # number of global nodes 
-    gn_partition_sequential = PA.uniform_partition(1:np,np,ngn)
-    p_fem_setup = map(gn_partition_sequential) do nids
-        ln_gn = PA.local_to_global(nids)
-        gn_ln = PA.global_to_local(nids)
-        restrict_setup(setup,ln_gn,gn_ln)
-    end
-end
-
 function prepare_setup_on_rank(rank, np, nx, ny, num_layers)
-    setup = do_setup(nx, ny, num_layers)
+    setup = mesh_setup(nx, ny)
 
     (; gn_x) = setup
     ngn = length(gn_x)
@@ -32,10 +20,10 @@ function prepare_setup_on_rank(rank, np, nx, ny, num_layers)
     ln_gn = PA.local_to_global(nids)
     gn_ln = PA.global_to_local(nids)
 
-    return restrict_setup(setup, ln_gn, gn_ln)
+    return restrict_setup(setup, ln_gn, gn_ln, num_layers)
 end
 
-function do_setup(nx, ny, num_layers)
+function mesh_setup(nx, ny)
     mesh = GT.cartesian_mesh((0,1,0,1),(nx,ny))
     Ω = GT.interior(mesh)
     dΩ = GT.quadrature(Ω,2)
@@ -46,15 +34,11 @@ function do_setup(nx, ny, num_layers)
     fq_refdy = GT.weights(GT.reference_quadratures(dΩ)[1])
     gf_fn_gn = GT.face_nodes(V)
     gn_x = GT.node_coordinates(V)
-    nfq = size(fq_fn_I,1)
-    ngf = length(gf_fn_gn)
-    ngq = nfq*ngf
-    ngn = length(gn_x)
-    (;fq_fn_I,fq_fn_dI,fq_refdy,gf_fn_gn,gn_x,num_layers)
+    (;fq_fn_I,fq_fn_dI,fq_refdy,gf_fn_gn,gn_x)
 end   
 
-function restrict_setup(setup, ln_gn, gn_ln)
-    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, num_layers) = setup
+function restrict_setup(setup, ln_gn, gn_ln,num_layers)
+    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x) = setup
 
     ln_gn = collect(ln_gn)
 
@@ -94,11 +78,7 @@ function restrict_setup(setup, ln_gn, gn_ln)
     lf_fn_ln = PA.jagged_array(data, ptrs)
 
     nfq, nfn = size(fq_fn_I)
-    ngq = ngf * nfq
     nln = length(ln_x)
-
-    # Interpolated z_L values at global quadrature points
-    gq_ln_zl_tilde = zeros(ngq, nln)
 
     # Full global u vector, needed later for dz_1.
     gn_u = zeros(ngn)
@@ -116,9 +96,8 @@ function restrict_setup(setup, ln_gn, gn_ln)
         ngf,
         ngn,
         lf_gf,
-        lf_fn_gn,
-        lf_fn_ln,
-        gq_ln_zl_tilde,
+        lf_fn_gn, # not used 
+        lf_fn_ln, # not used 
         gn_u,
         fn_ln_zl,
         fq_ln_zl_tilde,
@@ -166,91 +145,67 @@ function all_reduce!(p_gn_u::PA.MPIArray)
     p_gn_u
 end
 
-function rhs_I!(setup, gn_ln_zl)
-    (;fq_fn_I, gf_fn_gn, gq_ln_zl_tilde, fn_ln_zl, fq_ln_zl_tilde,ngf)= setup
+function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
+    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, gn_u, fq_ln_zl_tilde, fn_ln_zl) = setup
 
+    # I - preparation 
     nfq, nfn = size(fq_fn_I)
     nln = size(gn_ln_zl, 2)
 
-    fill!(gq_ln_zl_tilde, 0)
-
-    for gf in 1:ngf # loop over all faces
-        fn_gn = gf_fn_gn[gf]
-
-        for fn in 1:nfn
-            gn = fn_gn[fn]
-            for ln in 1:nln
-                fn_ln_zl[fn,ln] = gn_ln_zl[gn, ln]
-            end     
-        end     
-        mul!(fq_ln_zl_tilde, fq_fn_I, fn_ln_zl)
-        
-        # store z_L tilde at the global quadrature locations 
-        for fq in 1:nfq
-            gq = (gf-1)*nfq + fq # converts local quadrature indeks to global quatrature index
-            for ln in 1:nln
-                gq_ln_zl_tilde[gq, ln] = fq_ln_zl_tilde[fq, ln]
-            end     
-        end
-    end
-end
-
-function rhs_W!(setup, ln_du, ln_u)
-    (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x, ln_gn, ln_x, ngf, gq_ln_zl_tilde, gn_u, fq_ln_zl_tilde) = setup
-    
+    # W - preparation
     fill!(ln_du,0)
     fill!(gn_u, 0)
 
-    nln = size(fq_ln_zl_tilde,2)
-    nfq,nfn = size(fq_fn_I)
     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
     zy = zero(Ty) # zero coordinate vectore
     zJt = zero(zy*transpose(zy)) # zero matrix-like object for the Jacobian transpose 
     fn_y = zeros(Ty,nfn) # physical coordinates of the nodes of one face 
     fq_y = zeros(Ty,nfq) # physical coordinates of the quadrature points of one face
-    fq_dy = zeros(nfq) # physical quadrature weights for one face.
-    #   ngq = ngf * nfq # do we need this?
+    fq_dy = zeros(nfq) # physical quadrature weights for one face. 
+
+    for gf in 1:ngf # loop over all faces
+        # z_tilde calculation
+        fn_gn = gf_fn_gn[gf]
+        for fn in 1:nfn
+            gn = fn_gn[fn]
+            fn_y[fn] = gn_x[gn]
+            for ln in 1:nln
+                fn_ln_zl[fn,ln] = gn_ln_zl[gn, ln]
+            end     
+        end     
+        mul!(fq_ln_zl_tilde, fq_fn_I, fn_ln_zl)
+
+        for fq in 1:nfq
+            # preparation 
+            y = zy
+            Jt = zJt
+            for fn in 1:nfn
+                y += fq_fn_I[fq,fn]*fn_y[fn]
+                Jt += fn_y[fn]*fq_fn_dI[fq,fn]
+            end
+            fq_y[fq] = y
+            refdy = fq_refdy[fq]
+            fq_dy[fq] = abs(det(Jt))*refdy
+
+            # w*f(z_tilde) calculation
+            for ln in 1:nln
+                x = ln_x[ln]
+                dy = fq_dy[fq] 
+                wnq = w(x,y)*dy
+                zqn = fq_ln_zl_tilde[fq, ln]  
+                ln_du[ln] += wnq * f(zqn)
+            end    
+        end
+    end
 
     for ln in 1:nln
-        for gf in 1:ngf
-            fn_gn = gf_fn_gn[gf]
-            for fn in 1:nfn
-                gn = fn_gn[fn]
-                fn_y[fn] = gn_x[gn]
-            end
-            for fq in 1:nfq
-                y = zy
-                for fn in 1:nfn
-                    y += fq_fn_I[fq,fn]*fn_y[fn]
-                end
-                fq_y[fq] = y
-            end
-            for fq in 1:nfq
-                Jt = zJt
-                for fn in 1:nfn
-                    Jt += fn_y[fn]*fq_fn_dI[fq,fn]
-                end
-                refdy = fq_refdy[fq]
-                fq_dy[fq] = abs(det(Jt))*refdy
-            end
-            for fq in 1:nfq
-                y = fq_y[fq]
-                x = ln_x[ln]
-                dy = fq_dy[fq]
-                
-                # calculate an adequate W entry for a given quadrature point and given local node
-                wnq = w(x,y)*dy 
-                gq = (gf - 1) * nfq + fq # where does this equation come from?
-                zqn = gq_ln_zl_tilde[gq, ln]  
-                ln_du[ln] += wnq * f(zqn)
-            end
-        end
         ln_du[ln] -= ln_u[ln]
         # writing global u values to the gn_u (for all reduce to work properly)
         gn = ln_gn[ln]
         gn_u[gn] = ln_u[ln]
-    end  
-end
+    end    
+end 
+
 
 function rhs_Z1!(setup, gn_u, gn_ln_z1, gn_ln_dz1) 
     (;gn_x, ln_x, num_layers) = setup
@@ -289,15 +244,14 @@ function rhs!(duz,uz, p_setup, elap_rhs)
         du = duz.x[1]
         dz_all = duz.x[2:num_layers + 1]
         u = uz.x[1]
-    end 
 
-    elap_rhs[2] = @elapsed foreach(rhs_I!,p_setup, zl)
-    elap_rhs[3] = @elapsed p_ln_du = PA.local_values(du) 
-    elap_rhs[4] = @elapsed p_ln_u = PA.local_values(u)
-    elap_rhs[5] = @elapsed foreach(rhs_W!,p_setup,p_ln_du,p_ln_u)
-    elap_rhs[6] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
-    elap_rhs[7] = @elapsed all_reduce!(p_gn_u) 
-    elap_rhs[8] = @elapsed begin 
+        p_ln_du = PA.local_values(du)
+        p_ln_u = PA.local_values(u)
+    end  
+    elap_rhs[2] = @elapsed foreach(rhs_IW!, p_setup, zl, p_ln_du, p_ln_u)
+    elap_rhs[3] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
+    elap_rhs[4] = @elapsed all_reduce!(p_gn_u)
+    elap_rhs[5] = @elapsed begin 
         foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
         for layer in 2:num_layers
             foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
@@ -333,7 +287,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     duz = ArrayPartition(du, dz_layers...)
 
     nr = 10
-    r_elap_rhs = [zeros(8) for _ in 1:nr]
+    r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
 
         # reset the repetition

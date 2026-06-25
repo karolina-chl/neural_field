@@ -13,8 +13,8 @@ include(srcdir("data_processing.jl"))
 
 function plot_strong_scaling_nodes()
     proc_list = [1,2,4,8,16,32,64]
-    nxny_arr = [9,19,39,79]
-    num_reps = 100
+    nxny_arr = [19,39,79,159]
+    num_reps = 50
     num_layers = 2
     best_time_arr_combined = []
 
@@ -46,14 +46,14 @@ function plot_strong_scaling_nodes()
         scatter!(ax, proc_list, time_arr)
     end
 
-    Legend(fig[1, 2], ax)
+    axislegend(ax, position =:lb)
     save("plots/strong_scaling_nodes.png",fig)
 end
 
 function plot_strong_scaling_layers()
     proc_list = [1,2,4,8,16,32,64]
-    nx = ny = 9
-    num_reps = 100
+    nx = ny = 19
+    num_reps = 50
     num_layers_arr = [2,32,512]
     best_time_arr_combined = []
 
@@ -95,9 +95,9 @@ end
 ############################
 
 function plot_efficiency_nodes()
-    nxny_arr = [9,19,39,79]
+    nxny_arr = [19,39,79,159]
     num_layers = 2
-    num_reps = 100
+    num_reps = 50
     proc_list = [1,2,4,8,16,32,64]
     efficiency_combined = []
     for nx in nxny_arr
@@ -123,8 +123,7 @@ function plot_efficiency_nodes()
 
     for entry in eachindex(nxny_arr)
         nx = nxny_arr[entry]
-        num_el = nx*nx
-        lines!(ax, proc_list, efficiency_combined[entry], label = "Efficiency, num_elements =$num_el")
+        lines!(ax, proc_list, efficiency_combined[entry], label = "Efficiency, nx=$nx")
         scatter!(ax, proc_list, efficiency_combined[entry])
     end
 
@@ -133,9 +132,9 @@ function plot_efficiency_nodes()
 end 
 
 function plot_efficiency_layers()
-    nx = ny = 9
+    nx = ny = 19
     num_layers = [2,32,512]
-    num_reps = 100
+    num_reps = 50
     proc_list = [1,2,4,8,16,32,64]
     efficiency_combined = []
     for layer in num_layers
@@ -174,7 +173,7 @@ end
 
 function plot_comunication_vs_computation_nodes(nx)
     proc_list = [1,2,4,8,16,32,64] 
-    num_reps = 100
+    num_reps = 50
     num_layers = 2
 
     comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,num_layers)
@@ -219,8 +218,8 @@ end
 
 function plot_comunication_vs_computation_layers(layer)
     proc_list = [1,2,4,8,16,32,64] 
-    num_reps = 100
-    nx = 9
+    num_reps = 50
+    nx = 19
 
     comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,layer)
     
@@ -268,11 +267,10 @@ plot_strong_scaling_nodes()
 plot_strong_scaling_layers()
 plot_efficiency_nodes()
 plot_efficiency_layers()
-plot_comunication_vs_computation_nodes(9)
 plot_comunication_vs_computation_nodes(19)
 plot_comunication_vs_computation_nodes(39)
 plot_comunication_vs_computation_nodes(79)
+plot_comunication_vs_computation_nodes(159)
 plot_comunication_vs_computation_layers(2)
 plot_comunication_vs_computation_layers(32)
 plot_comunication_vs_computation_layers(512)
-#plot_comunication_vs_computation_layers(8192)
