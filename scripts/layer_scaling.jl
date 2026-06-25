@@ -3,11 +3,10 @@ using DrWatson
 num_reps = 50
 nx=ny=19
 layers_list = [2,32,512]
-proc_list = [2]
 comm_arr = []
 comp_arr = []
 
-num_proc = 2
+num_proc = 8
 
 for layer in layers_list
     comm, comp = get_max_comm_comp_time_over_repetitions(num_proc,num_reps,nx,ny,layer)
@@ -29,4 +28,4 @@ for i in eachindex(comm_arr)
     boxplot!(ax, fill(i, length(comm_arr[i])), comm_arr[i])
 end
 
-save("plots/layers_boxplot_num_proc$(num_proc).png",fig)
+save("plots/layers_boxplot_num_proc$(num_proc)with_barrier.png",fig)

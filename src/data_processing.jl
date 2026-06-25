@@ -54,7 +54,7 @@ function get_max_comm_comp_time_over_repetitions(num_proc,num_reps,nx,ny,num_lay
 
     for rep in 1:num_reps
         slowest_idx = argmax(summed_arr[rank][rep] for rank in 1:num_proc)
-        communication = rhs_times[slowest_idx][rep][4]
+        communication = rhs_times[slowest_idx][rep][5]
         computation = summed_arr[slowest_idx][rep]-communication
         push!(communication_arr, communication)
         push!(computation_arr, computation)

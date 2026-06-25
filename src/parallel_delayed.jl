@@ -27,7 +27,7 @@ function mesh_setup(nx, ny)
     mesh = GT.cartesian_mesh((0,1,0,1),(nx,ny))
     Ω = GT.interior(mesh)
     dΩ = GT.quadrature(Ω,2)
-    V = GT.lagrange_space(Ω,2)
+    V = GT.lagrange_space(Ω,1)
     V_faces= GT.each_face(V,dΩ;tabulate=(GT.value,GT.gradient))
     fq_fn_I = transpose(V_faces.accessor.reference_space_face.workspace.values[1])
     fq_fn_dI = transpose(V_faces.accessor.reference_space_face.workspace.gradients[1])
@@ -237,6 +237,7 @@ end
 
 # It is a good idea to measure the time for all lines
 function rhs!(duz,uz, p_setup, elap_rhs)
+    comm = MPI.COMM_WORLD
     elap_rhs[1] = @elapsed begin 
         num_layers = PA.getany(map(setup->setup.num_layers, p_setup))
         zl = uz.x[num_layers + 1]
@@ -250,8 +251,9 @@ function rhs!(duz,uz, p_setup, elap_rhs)
     end  
     elap_rhs[2] = @elapsed foreach(rhs_IW!, p_setup, zl, p_ln_du, p_ln_u)
     elap_rhs[3] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
-    elap_rhs[4] = @elapsed all_reduce!(p_gn_u)
-    elap_rhs[5] = @elapsed begin 
+    elap_rhs[4] = @elapsed MPI.Barrier(comm)
+    elap_rhs[5] = @elapsed all_reduce!(p_gn_u)
+    elap_rhs[6] = @elapsed begin 
         foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
         for layer in 2:num_layers
             foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
@@ -286,8 +288,8 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
-    nr = 10
-    r_elap_rhs = [zeros(5) for _ in 1:nr]
+    nr = 50
+    r_elap_rhs = [zeros(6) for _ in 1:nr]
     for r in 1:nr
 
         # reset the repetition
