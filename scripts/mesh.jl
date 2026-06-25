@@ -26,6 +26,8 @@ function create_mesh(nx, ny, interpolation_degree, integration_degree)
     return V, Ω, dΩ
 end
 
+using GLMakie
+
 function quadrature_coordinates(V, dΩ)
     V_faces = GT.each_face(V, dΩ, tabulate = (GT.value, GT.gradient))
     fq_fn_I = transpose(V_faces.accessor.reference_space_face.workspace.values[1])
@@ -53,98 +55,42 @@ function quadrature_coordinates(V, dΩ)
     return q_x
 end
 
-function cartesian_mesh_edges(nx, ny)
-    xs = Float64[]
-    ys = Float64[]
-
-    xgrid = range(0, 1, length = nx + 1)
-    ygrid = range(0, 1, length = ny + 1)
-
-    for x in xgrid
-        push!(xs, x)
-        push!(ys, 0.0)
-        push!(xs, x)
-        push!(ys, 1.0)
-        push!(xs, NaN)
-        push!(ys, NaN)
-    end
-
-    for y in ygrid
-        push!(xs, 0.0)
-        push!(ys, y)
-        push!(xs, 1.0)
-        push!(ys, y)
-        push!(xs, NaN)
-        push!(ys, NaN)
-    end
-
-    return xs, ys
-end
-
-function plot_mesh_panel!(ax, nx, ny, interpolation_degree, integration_degree)
-    V, Ω, dΩ = create_mesh(nx, ny, interpolation_degree, integration_degree)
-
+function plot_mesh(V,Ω,qn_x)
+    fig = Figure()
+    ax = Axis(fig[1, 1], aspect = Makie.DataAspect())
     node_x = GT.node_coordinates(V)
-    quad_x = quadrature_coordinates(V, dΩ)
-    edge_x, edge_y = cartesian_mesh_edges(nx, ny)
 
-    lines!(
+    GT.makie_edges!(
         ax,
-        edge_x,
-        edge_y,
+        Ω;
         color = :gray,
-        linewidth = 0.8,
-        label = "Mesh edges"
+        linewidth = 0.5,
+        label = "Element edges",
     )
-
+    
     scatter!(
         ax,
-        node_x,
+        node_x;
         color = :steelblue,
         markersize = 10,
-        label = "Nodes"
+        label = "Nodes",
     )
 
     scatter!(
         ax,
-        quad_x,
+        qn_x;
         color = :darkorange,
         markersize = 11,
         marker = :xcross,
-        label = "Quadrature points"
+        label = "Quadrature points",
     )
 
-    return ax
-end
+    Legend(fig[1,2], ax)
+    save("plots/mesh.png",fig)
 
-function plot_two_meshes_with_shared_legend(nx, ny)
-    fig = Figure(size = (1200, 500))
+    println("Plotted mesh saved in the folder plots as mesh.png")
+end     
 
-    ax1 = Axis(
-        fig[1, 1],
-        #title = "V = GT.lagrange_space(Ω, 1), dΩ = GT.quadrature(Ω, 1)",
-        aspect = DataAspect()
-    )
-
-    ax2 = Axis(
-        fig[1, 3],
-        #title = "V = GT.lagrange_space(Ω, 2), dΩ = GT.quadrature(Ω, 2)",
-        aspect = DataAspect()
-    )
-
-    plot_mesh_panel!(ax1, nx, ny, 1, 1)
-    plot_mesh_panel!(ax2, nx, ny, 2, 2)
-
-    Legend(fig[1, 2], ax1)
-
-    colsize!(fig.layout, 1, Relative(0.42))
-    colsize!(fig.layout, 2, Relative(0.16))
-    colsize!(fig.layout, 3, Relative(0.42))
-
-    fig
-end
-
-# fig = plot_two_meshes_with_shared_legend(5, 5)
-# save("plots/mesh.png",fig)
-
-create_mesh(9, 9, 1, 2)
+V, Ω, dΩ = create_mesh(5, 5, 1, 1)
+qn_x = quadrature_coordinates(V, dΩ)
+plot_mesh(V,Ω,qn_x)
