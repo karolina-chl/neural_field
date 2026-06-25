@@ -87,7 +87,10 @@ function plot_mesh(V,Ω,qn_x)
     save("plots/mesh.png",fig)
 
     println("Plotted mesh saved in the folder plots as mesh.png")
-end     
+end   
+
+
+###### Create a meah and save plotted mesh in the plots folder 
 
 V, Ω, dΩ = create_mesh(5, 5, 1, 1)
 qn_x = quadrature_coordinates(V, dΩ)
