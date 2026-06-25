@@ -26,8 +26,6 @@ function create_mesh(nx, ny, interpolation_degree, integration_degree)
     return V, Ω, dΩ
 end
 
-using GLMakie
-
 function quadrature_coordinates(V, dΩ)
     V_faces = GT.each_face(V, dΩ, tabulate = (GT.value, GT.gradient))
     fq_fn_I = transpose(V_faces.accessor.reference_space_face.workspace.values[1])
@@ -93,4 +91,4 @@ end
 
 V, Ω, dΩ = create_mesh(5, 5, 1, 1)
 qn_x = quadrature_coordinates(V, dΩ)
-plot_mesh(V,Ω,qn_x)
+plot_mesh(V, Ω, qn_x)
