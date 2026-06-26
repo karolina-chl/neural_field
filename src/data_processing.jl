@@ -47,6 +47,7 @@ end
 function get_max_comm_comp_time_over_repetitions(num_proc,num_reps,nx,ny,num_layers)
     communication_arr = Float64[]
     computation_arr = Float64[]
+    barrier_arr = Float64[]
     data = JSON.parsefile("data/exp_raw/mpi_exp/results_nx$(nx)ny$(ny)np$(num_proc)num_layers$(num_layers).json")
     rhs_times = [entry["rhs"] for entry in data]
     
@@ -54,12 +55,14 @@ function get_max_comm_comp_time_over_repetitions(num_proc,num_reps,nx,ny,num_lay
 
     for rep in 1:num_reps
         slowest_idx = argmax(summed_arr[rank][rep] for rank in 1:num_proc)
+        barrier = rhs_times[slowest_idx][rep][4]
         communication = rhs_times[slowest_idx][rep][5]
-        computation = summed_arr[slowest_idx][rep]-communication
+        computation = summed_arr[slowest_idx][rep]-communication-barrier
         push!(communication_arr, communication)
         push!(computation_arr, computation)
+        push!(barrier_arr, barrier)
     end 
-    return communication_arr, computation_arr
+    return communication_arr, computation_arr, barrier_arr
 end  
 
 function get_comm_comp_data(proc_list,num_reps,nx,ny,num_layers)
