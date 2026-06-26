@@ -5,18 +5,22 @@ export JULIA_DEPOT_PATH="/var/scratch/tln716/julia_depot"
 
 mkdir -p data/exp_raw/mpi_exp
 
-nx_arr=(19 39 79)
-proc_arr=(1 2 4 8 16 32 64)
+nx_arr=(160)
+ny_arr=(80)
+proc_arr=(1 2 4 8 16 32 64 128 256)
 
-for i in ${nx_arr[@]}
+for idx in ${!nx_arr[@]}
 do
     for proc in ${proc_arr[@]}
     do
         NP=$proc
-        NX=$i
-        NY=$i
+        NX=${nx_arr[$idx]}
+        NY=${ny_arr[$idx]}
         NUM_LAYERS=2
 
-        sbatch --ntasks=$NP scripts/single_run_mpi.sh $NX $NY $NUM_LAYERS
+        sbatch \
+            --ntasks=$NP \
+            --ntasks-per-node=8 \
+            scripts/single_run_mpi.sh $NX $NY $NUM_LAYERS
     done    
 done  
