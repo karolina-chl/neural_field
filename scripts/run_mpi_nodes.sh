@@ -5,7 +5,7 @@ export JULIA_DEPOT_PATH="/var/scratch/tln716/julia_depot"
 
 mkdir -p data/exp_raw/mpi_exp
 
-nx_arr=(160)
+nx_arr=(80)
 ny_arr=(80)
 proc_arr=(1 2 4 8 16 32 64 128 256)
 
