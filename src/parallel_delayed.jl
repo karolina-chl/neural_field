@@ -154,7 +154,7 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
 
     # W - preparation
     fill!(ln_du,0)
-    fill!(gn_u, 0)
+    fill!(gn_u,0)
 
     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
     zy = zero(Ty) # zero coordinate vectore
@@ -289,20 +289,18 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     nr = 10
     r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
-
         # reset the repetition
         elap_rhs = r_elap_rhs[r]
         copy!(u,u0)
-
         rhs!(duz,uz,p_setup,elap_rhs)
     end
 
-    elap = Dict{Symbol,Vector{Vector{Float64}}}()
-    elap[:setup] = [elap_setup]
-    elap[:rhs] = r_elap_rhs
-    elap[:mem] = [[mem]]
-    p_elap_main = PA.gather(map(_->elap,ranks))
     if save == true
+        elap = Dict{Symbol,Vector{Vector{Float64}}}()
+        elap[:setup] = [elap_setup]
+        elap[:rhs] = r_elap_rhs
+        elap[:mem] = [[mem]]
+        p_elap_main = PA.gather(map(_->elap,ranks))
         file_title = file_name(nx, ny, np, num_layers)
         PA.map_main(p_elap_main) do p_elap
             open("data/exp_raw/mpi_exp/$file_title.json", "w") do io
@@ -310,6 +308,10 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
             end
         end
         println("Experiment finished.Results saved as $file_title")
+
+        rss_peak_bytes = Sys.maxrss()
+        rss_peak_gb = rss_peak_bytes/1000000000
+        println("Peak memory was $rss_peak_gb GB")
     end     
 end
 
