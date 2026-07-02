@@ -1,8 +1,5 @@
 #!/bin/bash
 
-
-export PATH="/var/scratch/tln716/julia/julia-1.12.4/bin:$PATH"
-export JULIA_DEPOT_PATH="/var/scratch/tln716/julia_depot"
 mkdir -p data/exp_raw/mpi_exp
 
 layer_values_arr=(2 32 512)
@@ -17,6 +14,10 @@ do
         NY=19
         NUM_LAYERS=$layer
 
-        sbatch --ntasks=$NP scripts/single_run_mpi.sh $NX $NY $NUM_LAYERS
+        sbatch \
+            --partition=fat_rome \
+            --ntasks=$NP \
+            --time=00:15:00 \
+            scripts/single_run_mpi_snellius.sh $NX $NY $NUM_LAYERS
     done    
 done  

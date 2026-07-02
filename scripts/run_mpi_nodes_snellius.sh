@@ -19,6 +19,6 @@ do
             --partition=fat_rome \
             --ntasks=$NP \
             --time=00:15:00 \
-            scripts/single_run_mpi.sh $NX $NY $NUM_LAYERS
+            scripts/single_run_mpi_snellius.sh $NX $NY $NUM_LAYERS
     done    
 done  
