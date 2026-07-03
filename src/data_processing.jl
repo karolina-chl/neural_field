@@ -28,7 +28,7 @@ function get_strong_scaling_data(proc_list, num_reps, nx, ny, num_layers)
     best_time_arr = []
     for proc in proc_list
         max_arr = get_max_rhs_time_over_repetitions(proc, num_reps, nx, ny, num_layers)
-        push!(best_time_arr, mean(max_arr))
+        push!(best_time_arr, median(max_arr))
     end     
     return best_time_arr
 end 
@@ -37,7 +37,7 @@ function get_efficiency_data(proc_list, t1, num_reps, nx, ny, num_layers)
     efficiency = []
     for proc in proc_list
         max_arr = get_max_rhs_time_over_repetitions(proc, num_reps, nx, ny, num_layers)
-        tp = mean(max_arr)
+        tp = median(max_arr)
         eff = t1/(proc*tp)
         push!(efficiency, eff)
     end 
@@ -67,14 +67,14 @@ function get_comm_comp_data(proc_list,num_reps,nx,ny,num_layers)
     computation_arr_full = Float64[]
     for proc in proc_list
         communication_arr, computation_arr = get_max_comm_comp_time_over_repetitions(proc,num_reps,nx,ny,num_layers)
-        push!(communication_arr_full, mean(communication_arr))
-        push!(computation_arr_full, mean(computation_arr))
+        push!(communication_arr_full, median(communication_arr))
+        push!(computation_arr_full, median(computation_arr))
     end   
     return communication_arr_full, computation_arr_full
 end     
 
 function get_t1_time(nx, ny, num_layers)
     data_t1 = JSON.parsefile("data/exp_raw/mpi_exp/results_nx$(nx)ny$(ny)np1num_layers$(num_layers).json")
-    t1 = minimum(sum.(data_t1[1]["rhs"]))
+    t1 = median(sum.(data_t1[1]["rhs"]))
     return t1       
 end 

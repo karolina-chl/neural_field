@@ -1,8 +1,9 @@
 using DrWatson, Test
+
 @quickactivate "neural_field"
 
 
-include(srcdir("utils.jl"))
+include("utils.jl")
 include(srcdir("parallel_delayed.jl"))
 
 

@@ -158,7 +158,7 @@ function setup_for_parallel_test(nx, ny, num_layer)
     mesh = GT.cartesian_mesh((0,1,0,1),(nx,ny))
     Ω = GT.interior(mesh)
     dΩ = GT.quadrature(Ω,2)
-    V = GT.lagrange_space(Ω,2)
+    V = GT.lagrange_space(Ω,1)
     node_x = GT.node_coordinates(V)
 
     # Build workspace 
