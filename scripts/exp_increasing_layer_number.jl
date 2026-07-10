@@ -13,7 +13,7 @@ layers = parse(Int,ARGS[1])
 make_G_params(layers) = (;
     Ω = (
         build_Ω = create_cartesian_mesh,
-        Ω_args = ((0,1,0,1),(4,4))
+        Ω_args = ((0,1,0,1),(10,10))
         ),
     firing_function = (;
         f = f
@@ -37,9 +37,9 @@ make_G_params(layers) = (;
 )
 
 S_params = (
-    simulation_time = 3, 
+    simulation_time = 10, 
     solution_time_step = nothing,
-    save_time_step = [1,3],
+    save_time_step = 1,
 )
 
 params = (
@@ -54,7 +54,10 @@ params = (
 
 println("Executing the code with $layers layers")
 G_params = make_G_params(layers)
-solver(G_params, S_params, params)
+time = @elapsed solver(G_params, S_params, params)
+
+println("It took $time seconds to finish")
+
 
 
 
