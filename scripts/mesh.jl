@@ -108,5 +108,5 @@ V, Ω, dΩ = create_mesh(5, 5, 1, 1)
 qn_x = quadrature_coordinates(V, dΩ)
 plot_mesh(V, Ω, qn_x)
 
-mesh = create_cartesian_mesh(domain, num_elements_per_dir)
+mesh = create_cartesian_mesh((0,1,0,1), (2,2))
 plot_2d_mesh(mesh)
