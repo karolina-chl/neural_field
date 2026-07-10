@@ -1,15 +1,11 @@
 using DrWatson, Test
 
 @quickactivate "neural_field"
-
-
-include("utils.jl")
 include(srcdir("parallel_delayed.jl"))
 
 
 # Run test suite
 println("Starting tests")
-ti = time()
 
 @testset "model correctnes" begin
     duz_1, uz_1, p, t, workspace_1 = setup_rhs_delayed_problem(;
@@ -42,10 +38,6 @@ end
     duz_p = materialize_debug_duz(duz_p_debug)
 
     for i in eachindex(duz_s.x)
-        # println("==")
-        # @test duz_s.x[i] == duz_p.x[i]
-        # maxdiff = maximum(abs.(duz_s[i] .- duz_p[i]))
-        # println("  max abs diff:   ", maxdiff)
         @test isapprox(duz_s.x[i], duz_p.x[i]; atol = 1e-10, rtol = 1e-10)
     end
 

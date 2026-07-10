@@ -3,13 +3,14 @@ using DrWatson
 @quickactivate "neural_field"
 
 include(srcdir("FEM.jl"))
+include(srcdir("mesh.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 
 G_params = (;
     Ω = (
-        build_Ω = one_d_mesh, 
-        Ω_args = (L = 30, num_el = 1024)
+        build_Ω = create_cartesian_mesh,
+        Ω_args = ((0,1,0,1),(4,4))
         ),
     firing_function = (;
         f = f
@@ -33,14 +34,10 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 50, 
+    simulation_time = 3, 
     solution_time_step = nothing,
-    save_time_step = [1,50]
+    save_time_step = [1,3],
 )
-
-L = G_params.Ω.Ω_args.L
-num_el = G_params.Ω.Ω_args.num_el
-simulation_time = S_params.simulation_time
 
 params = (
     post_processing = (
@@ -48,9 +45,9 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    datafile_name = "Test_test_test_23.04"
+    save_layers_data = false, # discoured to turn on layers data saving, the file size quickly explodes 
+    datafile_name = "Test_test_test_23.04.jld2"
 )
 
-
-print("Executing the code")
-@time main(G_params, S_params, params)
+println("Executing the code")
+solver(G_params, S_params, params)
