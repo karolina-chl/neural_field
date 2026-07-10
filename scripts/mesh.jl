@@ -1,6 +1,8 @@
 import GalerkinToolkit as GT
 using GLMakie
 
+include(srcdir("mesh.jl"))
+
 function create_mesh(nx, ny, interpolation_degree, integration_degree)
     mesh = GT.cartesian_mesh((0, 1, 0, 1), (nx, ny))
     Ω = GT.interior(mesh)
@@ -87,7 +89,17 @@ function plot_mesh(V,Ω,qn_x)
     save("plots/mesh.png",fig)
 
     println("Plotted mesh saved in the folder plots as mesh.png")
-end   
+end 
+
+function plot_2d_mesh(Ω)
+    """Plot 2D mesh"""
+    axis = (aspect = Makie.DataAspect(),)
+    shading = Makie.NoShading
+    fig = GT.makie_surfaces(Ω;color=:pink,axis,shading)
+    GT.makie_edges!(Ω;color=:blue)
+    save("plots/domain.png", fig)
+    println("Figure saved in the plots folder as 'domain.png'")
+end 
 
 
 ###### Create a meah and save plotted mesh in the plots folder 
@@ -95,3 +107,6 @@ end
 V, Ω, dΩ = create_mesh(5, 5, 1, 1)
 qn_x = quadrature_coordinates(V, dΩ)
 plot_mesh(V, Ω, qn_x)
+
+mesh = create_cartesian_mesh(domain, num_elements_per_dir)
+plot_2d_mesh(mesh)

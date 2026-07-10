@@ -1,6 +1,5 @@
 import GalerkinToolkit as GT
 import Gmsh: gmsh
-import GLMakie as Makie
 
 function create_cartesian_mesh(domain, num_elements_per_dir)
     mesh = GT.cartesian_mesh(domain,num_elements_per_dir)
@@ -25,13 +24,4 @@ function create_circle_mesh(face_size, R)
     return mesh 
 end
 
-function plot_2d_mesh(Ω)
-    """Plot 2D mesh"""
-    axis = (aspect = Makie.DataAspect(),)
-    shading = Makie.NoShading
-    fig = GT.makie_surfaces(Ω;color=:pink,axis,shading)
-    GT.makie_edges!(Ω;color=:blue)
-    Makie.save("plots/domain.png", fig)
-    println("Figure saved in the plots folder as 'domain.png'")
-end 
 

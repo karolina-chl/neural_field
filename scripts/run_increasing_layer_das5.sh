@@ -8,5 +8,5 @@ layer_values_arr=(2)
 
 for layer in ${layer_values_arr[@]}
 do
-    sbatch scripts/exp_increasing_layer_number.jl $layer 
+    julia --project=. scripts/exp_increasing_layer_number.jl $layer 
 done

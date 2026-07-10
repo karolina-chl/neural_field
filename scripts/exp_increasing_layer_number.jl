@@ -8,6 +8,8 @@ include(srcdir("mesh.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 
+layers = parse(Int,ARGS[1])
+
 make_G_params(layers) = (;
     Ω = (
         build_Ω = create_cartesian_mesh,
@@ -51,7 +53,6 @@ params = (
 )
 
 println("Executing the code with $layers layers")
-layers = parse(ARGS[1])
 G_params = make_G_params(layers)
 solver(G_params, S_params, params)
 
