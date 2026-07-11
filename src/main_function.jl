@@ -38,7 +38,7 @@ function save_solution_json(ode_solution,num_layer,file_name; save_layers_data =
         ) 
     end     
 
-    open("data/exp_raw/$file_name.json", "w") do io
+    open("data/exp_raw/$file_name", "w") do io
         JSON.json(io, ode_solution_extracted) 
     end
 end  

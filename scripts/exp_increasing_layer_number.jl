@@ -13,7 +13,7 @@ layers = parse(Int,ARGS[1])
 make_G_params(layers) = (;
     Ω = (
         build_Ω = create_cartesian_mesh,
-        Ω_args = ((0,1,0,1),(10,10))
+        Ω_args = ((-30,30),(500,))
         ),
     firing_function = (;
         f = f
@@ -37,9 +37,9 @@ make_G_params(layers) = (;
 )
 
 S_params = (
-    simulation_time = 10, 
+    simulation_time = 20, 
     solution_time_step = nothing,
-    save_time_step = 1,
+    save_time_step = 0.2,
 )
 
 params = (
