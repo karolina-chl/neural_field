@@ -2,6 +2,7 @@ using DrWatson, Test
 
 @quickactivate "neural_field"
 include(srcdir("parallel_delayed.jl"))
+include(srcdir("mesh.jl"))
 include("test_utils.jl")
 
 

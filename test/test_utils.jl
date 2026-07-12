@@ -6,6 +6,7 @@ import GalerkinToolkit as GT
 @quickactivate "neural_field"
 
 include(srcdir("FEM.jl"))
+include(srcdir("mesh.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 include(srcdir("parallel_delayed.jl"))
