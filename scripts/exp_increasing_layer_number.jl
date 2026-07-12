@@ -1,3 +1,4 @@
+import JLD2
 using DrWatson
 
 @quickactivate "neural_field"
@@ -7,10 +8,12 @@ include(srcdir("mesh.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 
-G_params = (;
+layers = parse(Int,ARGS[1])
+
+make_G_params(layers) = (;
     Ω = (
         build_Ω = create_cartesian_mesh,
-        Ω_args = ((0,1,0,1),(4,4))
+        Ω_args = ((-30,30),(500,))
         ),
     firing_function = (;
         f = f
@@ -21,7 +24,7 @@ G_params = (;
     state_initialization = (
         initialize_u = φ,
         initialize_z = z_initial,
-        num_layer = 2
+        num_layer = layers
         ),
     synaptic_matrix = (
         w = w, 
@@ -34,9 +37,9 @@ G_params = (;
 )
 
 S_params = (
-    simulation_time = 3, 
+    simulation_time = 20, 
     solution_time_step = nothing,
-    save_time_step = [1,3],
+    save_time_step = 0.2,
 )
 
 params = (
@@ -45,9 +48,16 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    save_layers_data = false, # discoured to turn on layers data saving, the file size quickly explodes 
-    datafile_name = "Test_test_test_23.04.jld2"
+    save_layers_data = false, 
+    datafile_name = "solution_layers_$layers.jld2"
 )
 
-println("Executing the code")
-solver(G_params, S_params, params)
+println("Executing the code with $layers layers")
+G_params = make_G_params(layers)
+time = @elapsed solver(G_params, S_params, params)
+
+println("It took $time seconds to finish")
+
+
+
+

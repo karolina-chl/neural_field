@@ -36,6 +36,50 @@ function get_available_strong_scaling_data(proc_list, num_reps, nx, ny, num_laye
     return available_procs, time_arr
 end
 
+function get_available_efficiency_data(proc_list, num_reps, nx, ny, num_layers)
+    available_procs = Int[]
+
+    for proc in proc_list
+        file = result_file(nx, ny, proc, num_layers)
+
+        if isfile(file)
+            push!(available_procs, proc)
+        else
+            @warn "Missing file, skipping" file
+        end
+    end
+
+    if isempty(available_procs)
+        return Int[], Float64[], nothing
+    end
+
+    # Prefer true strong-scaling efficiency relative to one processor.
+    if isfile(result_file(nx, ny, 1, num_layers))
+        p_ref = 1
+        t_ref = get_t1_time(nx, ny, num_layers)
+    else
+        # Otherwise compute relative efficiency from the first available proc count.
+        p_ref = available_procs[1]
+        t_ref = get_strong_scaling_data([p_ref], num_reps, nx, ny, num_layers)[1]
+    end
+
+    # Reuse your existing data_processing function.
+    # Passing p_ref * t_ref gives:
+    #   eff = (p_ref * t_ref) / (p * t_p)
+    efficiency_arr = Float64.(
+        get_efficiency_data(
+            available_procs,
+            p_ref * t_ref,
+            num_reps,
+            nx,
+            ny,
+            num_layers,
+        )
+    )
+
+    return available_procs, efficiency_arr, p_ref
+end
+
 function plot_strong_scaling_nodes()
     proc_list = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 
@@ -204,5 +248,86 @@ function plot_strong_scaling_layers()
     return fig
 end
 
+function plot_efficiency_layers()
+    proc_list = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+    nx = 70
+    ny = 70
+
+    num_layers_arr = [16, 32, 64, 128, 256, 512, 1024, 2048]
+
+    num_reps = 10
+
+    fig = Figure(size=(1200,600))
+
+    ax = Axis(
+        fig[1, 1];
+        xlabel = "Number of processors",
+        ylabel = "Parallel efficiency",
+        xticks = proc_list,
+        xscale = log2,
+        limits = (nothing, (0, 1.6))
+    )
+
+    reference_label_added = false
+
+    for num_layers in num_layers_arr
+        available_procs, efficiency_arr, p_ref = get_available_efficiency_data(
+            proc_list,
+            num_reps,
+            nx,
+            ny,
+            num_layers,
+        )
+
+        if isempty(available_procs)
+            @warn "No data available" nx ny num_layers
+            continue
+        end
+
+        reference_label = reference_label_added ? nothing : "Perfect efficiency"
+
+        lines!(
+            ax,
+            available_procs,
+            ones(length(available_procs));
+            linestyle = :dash,
+            color = :gray,
+            label = reference_label,
+        )
+
+        reference_label_added = true
+
+        N = (nx + 1) * (ny + 1)
+        M = N + num_layers * N^2
+        M_bln = round(M / 1_000_000_000, digits = 2)
+
+        label = "L=$(num_layers), $(M_bln) bln unknowns"
+
+        lines!(
+            ax,
+            available_procs,
+            efficiency_arr;
+            label = label,
+        )
+
+        scatter!(
+            ax,
+            available_procs,
+            efficiency_arr,
+        )
+    end
+
+    #axislegend(ax, position = :lt)
+    Legend(fig[1,2],ax)
+
+    mkpath("plots")
+    save("plots/large_efficiency_layers_exp.png", fig)
+
+    return fig
+end
+
 # plot_strong_scaling_nodes()
-plot_strong_scaling_layers()
+# plot_strong_scaling_layers()
+
+plot_efficiency_layers()

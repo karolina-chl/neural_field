@@ -9,31 +9,22 @@ import Gmsh
 
 include("equations.jl")
 
-function one_d_mesh(L, num_el) 
-    return GT.cartesian_mesh((-L, L),(num_el,))
-end    
+# function one_d_mesh(L, num_el) 
+#     return GT.cartesian_mesh((-L, L),(num_el,))
+# end    
 
-function circle_mesh(gmsh, mesh_size, R)
-    dim = 2
-    gmsh.option.setNumber("General.Verbosity", 2)
-    circle_tag = gmsh.model.occ.add_circle(0,0,0,R)
-    circle_curve_tag = gmsh.model.occ.add_curve_loop([circle_tag])
-    circle_surf_tag = gmsh.model.occ.add_plane_surface([circle_curve_tag])
-    gmsh.model.occ.synchronize()
-    gmsh.model.model.add_physical_group(dim,[circle_surf_tag],-1,"cortex")
-    gmsh.option.setNumber("Mesh.MeshSizeMax",mesh_size)
-    gmsh.model.mesh.generate(dim)
-    GT.mesh_from_gmsh(gmsh)
-end
-
-function plot_circle_mesh(Ω)
-    """Plot circle mesh"""
-    axis = (aspect = Makie.DataAspect(),)
-    shading = Makie.NoShading
-    fig = GT.makie_surfaces(Ω;color=:pink,axis,shading)
-    GT.makie_edges!(Ω;color=:blue)
-    Makie.save("domain.png", fig)
-end 
+# function circle_mesh(gmsh, mesh_size, R)
+#     dim = 2
+#     gmsh.option.setNumber("General.Verbosity", 2)
+#     circle_tag = gmsh.model.occ.add_circle(0,0,0,R)
+#     circle_curve_tag = gmsh.model.occ.add_curve_loop([circle_tag])
+#     circle_surf_tag = gmsh.model.occ.add_plane_surface([circle_curve_tag])
+#     gmsh.model.occ.synchronize()
+#     gmsh.model.model.add_physical_group(dim,[circle_surf_tag],-1,"cortex")
+#     gmsh.option.setNumber("Mesh.MeshSizeMax",mesh_size)
+#     gmsh.model.mesh.generate(dim)
+#     GT.mesh_from_gmsh(gmsh)
+# end
 
 function synaptic_matrix(V,dΩ,w)
     node_x = GT.node_coordinates(V)

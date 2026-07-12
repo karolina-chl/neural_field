@@ -6,9 +6,11 @@ import GalerkinToolkit as GT
 @quickactivate "neural_field"
 
 include(srcdir("FEM.jl"))
+include(srcdir("mesh.jl"))
 include(srcdir("equations.jl"))
 include(srcdir("main_function.jl"))
 include(srcdir("parallel_delayed.jl"))
+
 
 
 ########################################
@@ -26,7 +28,7 @@ function setup_rhs_delayed_problem(;
     integration_degree = 1
 
     # Build mesh 
-    mesh = one_d_mesh(L, num_el)
+    mesh = create_cartesian_mesh((-L,L), (num_el,))
     Ω = GT.interior(mesh)
     V = GT.lagrange_space(Ω, interpolation_degree)
     node_x = GT.node_coordinates(V)

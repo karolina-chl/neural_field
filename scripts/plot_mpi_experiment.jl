@@ -132,9 +132,9 @@ function plot_efficiency_nodes()
 end 
 
 function plot_efficiency_layers()
-    nx = ny = 19
-    num_layers = [2,32,512]
-    num_reps = 50
+    nx = ny = 60
+    num_layers = [16,32,64,128,256,512]
+    num_reps = 10
     proc_list = [1,2,4,8,16,32,64]
     efficiency_combined = []
     for layer in num_layers
@@ -146,7 +146,7 @@ function plot_efficiency_layers()
     fig = Figure()
     ax = Axis(
         fig[1,1]; 
-        title = "Efficiency - layers", 
+        #title = "Efficiency - layers", 
         xlabel = "Number of processors", 
         ylabel = "Efficiency", 
         xticks = proc_list,
@@ -164,7 +164,7 @@ function plot_efficiency_layers()
     end
 
     axislegend(ax; position = :lb )
-    save("plots/efficiency_layers.png",fig)
+    save("plots/efficiency_layers_exp.png",fig)
 end
 
 ############################
@@ -218,8 +218,8 @@ end
 
 function plot_comunication_vs_computation_layers(layer)
     proc_list = [1,2,4,8,16,32,64] 
-    num_reps = 50
-    nx = 19
+    num_reps = 10
+    nx = 70
 
     comm_arr_full, comp_arr_full = get_comm_comp_data(proc_list,num_reps,nx,nx,layer)
     
@@ -258,19 +258,22 @@ function plot_comunication_vs_computation_layers(layer)
     )
 
     axislegend(ax1, position = :rb)
-    save("plots/communication_vs_computation_$(layer)layers.png",fig)
+    save("plots/communication_vs_computation_$(layer)layers_nx$(nx).png",fig)
 end
 
 # plot all 
 
-plot_strong_scaling_nodes()
-plot_strong_scaling_layers()
-plot_efficiency_nodes()
-plot_efficiency_layers()
-plot_comunication_vs_computation_nodes(19)
-plot_comunication_vs_computation_nodes(39)
-plot_comunication_vs_computation_nodes(79)
-plot_comunication_vs_computation_nodes(159)
-plot_comunication_vs_computation_layers(2)
+# plot_strong_scaling_nodes()
+# plot_strong_scaling_layers()
+# plot_efficiency_nodes()
+# plot_efficiency_layers()
+# plot_comunication_vs_computation_nodes(19)
+# plot_comunication_vs_computation_nodes(39)
+# plot_comunication_vs_computation_nodes(79)
+# plot_comunication_vs_computation_nodes(159)
+# plot_comunication_vs_computation_layers(2)
+# plot_comunication_vs_computation_layers(32)
+# plot_comunication_vs_computation_layers(512)
+plot_comunication_vs_computation_layers(16)
 plot_comunication_vs_computation_layers(32)
-plot_comunication_vs_computation_layers(512)
+plot_comunication_vs_computation_layers(64)
