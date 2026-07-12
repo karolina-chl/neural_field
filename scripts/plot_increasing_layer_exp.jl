@@ -43,7 +43,9 @@ end
 function plot_first_and_last(layer)
     data = load("data/exp_raw/solution_layers_$layer.jld2")
     u_data = data["u"]
-    u_last = u_data[20]
+    t = data["t"]
+    last = length(t)
+    u_last = u_data[last]
     u_initial = u_data[1]
 
     mesh = range(-30,30,length = 501)
@@ -63,6 +65,7 @@ function plot_u_evolution_heatmap(layer)
     u_data = data["u"]
     u_heatmap = reduce(hcat,u_data)
     t_heatmap = data["t"]
+    mesh = range(-30,30,length = 501)
 
     heatmap = Figure()
     ax = Axis(heatmap[1,1], xlabel = "U", ylabel = "Time")
@@ -71,5 +74,15 @@ function plot_u_evolution_heatmap(layer)
 end  
 
 ## Example 
-layers_arr = [2,3,4,5,6,7,8,9,10,11,12,13,14]
-plot_norm_increasing_layers(layers_arr,14)
+layers_arr = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+plot_norm_increasing_layers(layers_arr,20)
+plot_first_and_last(2)
+plot_u_evolution_heatmap(2)
+plot_first_and_last(10)
+plot_u_evolution_heatmap(10)
+plot_first_and_last(14)
+plot_u_evolution_heatmap(14)
+plot_first_and_last(19)
+plot_u_evolution_heatmap(19)
+plot_first_and_last(20)
+plot_u_evolution_heatmap(20)
