@@ -307,11 +307,18 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
                 JSON.print(io, p_elap)
             end
         end
-        println("Experiment finished.Results saved as $file_title")
 
-        rss_peak_bytes = Sys.maxrss()
-        rss_peak_gb = rss_peak_bytes/1000000000
-        println("Peak memory was $rss_peak_gb GB")
+        rank = MPI.Comm_rank(MPI.COMM_WORLD)
+        comm = MPI.COMM_WORLD
+
+        local_peak_gb = Sys.maxrss() / 1000000000
+        maximum_peak_gb = MPI.Allreduce(local_peak_gb, MPI.MAX, comm)
+
+        if rank == 0
+            println("Experiment finished. Results saved as $file_title")
+            println("Maximum peak memory across all ranks was $maximum_peak_gb GB")
+        end
+
     end     
 end
 
@@ -325,7 +332,8 @@ function main_mpi(nx,ny, num_layers)
         np = MPI.Comm_size(comm)
         main(backend,np,3,3,num_layers;save = false, file_name = title)
         MPI.Barrier(comm)
-        main(backend,np,nx,ny,num_layers;save = true, file_name = title) 
+        main(backend,np,nx,ny,num_layers;save = true, file_name = title)
+        MPI.Barrier(comm) 
     end
 end
 
