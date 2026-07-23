@@ -225,22 +225,47 @@ function rhs_Zn!(setup, dz_curr, z_prev, z_curr)
     (;gn_x, ln_x, num_layers) = setup
     ngn, nln = size(z_curr)
 
-    for i in 1:nln #iterating column by column 
+    for i in 1:nln  
         y = ln_x[i]
         for j in 1:ngn
             x = gn_x[j]
             dz_curr[j,i] = α(x, y, num_layers) *(z_prev[j,i] - z_curr[j,i]) 
         end     
     end
-end     
-    
+end  
 
-# It is a good idea to measure the time for all lines
+function rhs_Zall!(setup, z_all, dz_all, gn_u)
+    (;gn_x, ln_x, num_layers) = setup
+    ngn, nln = size(z_all[1])
+
+    # layer 1
+    for i in 1:nln 
+        y = ln_x[i]
+        for j in 1:ngn
+            x = gn_x[j]
+            dz_all[1][j,i] = α(x, y, num_layers)*(gn_u[j] - z_all[1][j,i]) 
+        end
+    end
+
+    # layer 2:all
+    for layer in 2:num_layers
+        for i in 1:nln  
+            y = ln_x[i]
+            for j in 1:ngn
+                x = gn_x[j]
+                dz_all[layer][j,i] = α(x, y, num_layers) *(z_all[layer-1][j,i] - z_all[layer][j,i]) 
+            end     
+        end
+    end     
+end     
+
+
 function rhs!(duz,uz, p_setup, elap_rhs)
     elap_rhs[1] = @elapsed begin 
         num_layers = PA.getany(map(setup->setup.num_layers, p_setup))
         zl = uz.x[num_layers + 1]
         z_all = uz.x[2:num_layers + 1]
+        println(typeof(z_all))
         du = duz.x[1]
         dz_all = duz.x[2:num_layers + 1]
         u = uz.x[1]
@@ -252,11 +277,17 @@ function rhs!(duz,uz, p_setup, elap_rhs)
     elap_rhs[3] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
     elap_rhs[4] = @elapsed all_reduce!(p_gn_u)
     elap_rhs[5] = @elapsed begin 
-        foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
-        for layer in 2:num_layers
-            foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
-        end     
-    end  
+        p_z_all = map(tuple, z_all...)
+        println(typeof(p_z_all))
+        p_dz_all = map(tuple, dz_all...)
+        foreach(rhs_Zall!,p_setup, p_z_all, p_dz_all, p_gn_u)
+    end
+    # elap_rhs[5] = @elapsed begin 
+    #     foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
+    #     for layer in 2:num_layers
+    #         foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
+    #     end     
+    # end  
 end
 
 function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
@@ -286,7 +317,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
-    nr = 10
+    nr = 1
     r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
         # reset the repetition
@@ -342,3 +373,5 @@ function main_debug(nx,ny,np,num_layers)
         main(backend,np,nx,ny,num_layers;save = true, file_name = title)
     end
 end
+
+main_debug(3,3,1,2)
