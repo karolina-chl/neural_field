@@ -18,9 +18,8 @@ function prepare_setup_on_rank(rank, np, nx, ny, num_layers)
 
     nids = gn_partition_sequential[rank]
     ln_gn = PA.local_to_global(nids)
-    gn_ln = PA.global_to_local(nids)
 
-    return restrict_setup(setup, ln_gn, gn_ln, num_layers)
+    return restrict_setup(setup, ln_gn, num_layers)
 end
 
 function mesh_setup(nx, ny)
@@ -37,7 +36,7 @@ function mesh_setup(nx, ny)
     (;fq_fn_I,fq_fn_dI,fq_refdy,gf_fn_gn,gn_x)
 end   
 
-function restrict_setup(setup, ln_gn, gn_ln,num_layers)
+function restrict_setup(setup, ln_gn, num_layers)
     (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x) = setup
 
     ln_gn = collect(ln_gn)
@@ -46,36 +45,6 @@ function restrict_setup(setup, ln_gn, gn_ln,num_layers)
 
     ngf = length(gf_fn_gn)
     ngn = length(gn_x)
-
-    gn_in_part = fill(false, ngn)
-    gn_in_part[ln_gn] .= true
-
-    gf_in_part = fill(false, ngf)
-
-    for gf in 1:ngf
-        fn_gn = gf_fn_gn[gf]
-
-        for gn in fn_gn
-            if gn_in_part[gn]
-                gf_in_part[gf] = true
-                break
-            end
-        end
-    end
-
-    lf_gf = findall(gf_in_part)
-
-    lf_fn_gn = PA.jagged_array(gf_fn_gn[lf_gf])
-
-    data = copy(lf_fn_gn.data)
-
-    for k in 1:length(data)
-        gn = data[k]
-        data[k] = gn_ln[gn]
-    end
-
-    ptrs = lf_fn_gn.ptrs
-    lf_fn_ln = PA.jagged_array(data, ptrs)
 
     nfq, nfn = size(fq_fn_I)
     nln = length(ln_x)
@@ -95,9 +64,6 @@ function restrict_setup(setup, ln_gn, gn_ln,num_layers)
         ln_x,
         ngf,
         ngn,
-        lf_gf,
-        lf_fn_gn, # not used 
-        lf_fn_ln, # not used 
         gn_u,
         fn_ln_zl,
         fq_ln_zl_tilde,
@@ -206,36 +172,32 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
     end    
 end 
 
-
-function rhs_Z1!(setup, gn_u, gn_ln_z1, gn_ln_dz1) 
+function rhs_Zall!(setup, z_all, dz_all, gn_u)
     (;gn_x, ln_x, num_layers) = setup
+    ngn, nln = size(z_all[1])
 
-    ngn, nln = size(gn_ln_z1)
-
-    for i in 1:nln # iterating column by column 
+    # layer 1
+    for i in 1:nln 
         y = ln_x[i]
         for j in 1:ngn
             x = gn_x[j]
-            gn_ln_dz1[j,i] = α(x, y, num_layers)*(gn_u[j] - gn_ln_z1[j,i]) 
+            dz_all[1][j,i] = α(x, y, num_layers)*(gn_u[j] - z_all[1][j,i]) 
         end
     end
-end
 
-function rhs_Zn!(setup, dz_curr, z_prev, z_curr)
-    (;gn_x, ln_x, num_layers) = setup
-    ngn, nln = size(z_curr)
-
-    for i in 1:nln #iterating column by column 
-        y = ln_x[i]
-        for j in 1:ngn
-            x = gn_x[j]
-            dz_curr[j,i] = α(x, y, num_layers) *(z_prev[j,i] - z_curr[j,i]) 
-        end     
-    end
+    # layer 2:all
+    for layer in 2:num_layers
+        for i in 1:nln  
+            y = ln_x[i]
+            for j in 1:ngn
+                x = gn_x[j]
+                dz_all[layer][j,i] = α(x, y, num_layers) *(z_all[layer-1][j,i] - z_all[layer][j,i]) 
+            end     
+        end
+    end     
 end     
-    
 
-# It is a good idea to measure the time for all lines
+
 function rhs!(duz,uz, p_setup, elap_rhs)
     elap_rhs[1] = @elapsed begin 
         num_layers = PA.getany(map(setup->setup.num_layers, p_setup))
@@ -252,11 +214,10 @@ function rhs!(duz,uz, p_setup, elap_rhs)
     elap_rhs[3] = @elapsed p_gn_u = map(setup-> setup.gn_u,p_setup)
     elap_rhs[4] = @elapsed all_reduce!(p_gn_u)
     elap_rhs[5] = @elapsed begin 
-        foreach(rhs_Z1!,p_setup, p_gn_u, z_all[1], dz_all[1])
-        for layer in 2:num_layers
-            foreach(rhs_Zn!,p_setup, dz_all[layer], z_all[layer-1], z_all[layer])
-        end     
-    end  
+        p_z_all = map(tuple, z_all...)
+        p_dz_all = map(tuple, dz_all...)
+        foreach(rhs_Zall!,p_setup, p_z_all, p_dz_all, p_gn_u)
+    end
 end
 
 function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
@@ -286,7 +247,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     uz = ArrayPartition(u, z_layers...)
     duz = ArrayPartition(du, dz_layers...)
 
-    nr = 10
+    nr = 1
     r_elap_rhs = [zeros(5) for _ in 1:nr]
     for r in 1:nr
         # reset the repetition

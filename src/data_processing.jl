@@ -78,3 +78,24 @@ function get_t1_time(nx, ny, num_layers)
     t1 = median(sum.(data_t1[1]["rhs"]))
     return t1       
 end 
+
+function get_partial_max_comp_time_over_repetitions(time_component,nx,ny,num_proc,num_layers)
+    data = JSON.parsefile("data/exp_raw/mpi_exp/results_nx$(nx)ny$(ny)np$(num_proc)num_layers$(num_layers).json")
+    rhs_times = [entry["rhs"] for entry in data]
+    num_reps = length(rhs_times[1])
+    slowest_worker_layers = []
+    for num in 1:num_reps
+        max_time = maximum(rhs_times[rank][num][time_component] for rank in 1:num_proc)
+        push!(slowest_worker_layers, max_time)
+    end 
+    return slowest_worker_layers
+end   
+
+function get_partial_strong_scaling_data(time_component,proc_list, nx, ny, num_layers)
+    best_time_arr = []
+    for proc in proc_list
+        max_arr = get_partial_max_comp_time_over_repetitions(time_component,nx,ny,proc,num_layers)
+        push!(best_time_arr, median(max_arr))
+    end     
+    return best_time_arr
+end     
