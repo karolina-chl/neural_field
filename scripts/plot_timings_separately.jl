@@ -67,9 +67,9 @@ function plot_partial_strong_scaling_layers(time_component,proc_list,nx,ny,num_l
     save("plots/partial_strong_scaling_layer_$(time_component)time_component.png", fig)
 end
 
-proc_list = [16,32,64,128,256,512,1024,2048,4096]
-nx = ny = 80
-num_layers_arr = [16,32,64,128,256,512,1024]
-time_component = 5
+proc_list = [1,2,4,8,16,32,64]
+nx = ny = 60
+num_layers_arr = [16,32,64,128,256]
+time_component = 1
 
 plot_partial_strong_scaling_layers(time_component,proc_list,nx,ny,num_layers_arr)

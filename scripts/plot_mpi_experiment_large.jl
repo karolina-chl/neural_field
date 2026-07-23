@@ -295,9 +295,9 @@ end
 nxny_arr = [(160,160),(320,160),(320,320),(640,320),(640,640)]
 num_reps = 10
 num_layers = 2
-proc_list = [128,256,512,1024,2048]
-nx=ny=130
-num_layers_arr = [16,32,64,128,256,512]
+proc_list = [1,2,4,8,16,32,64]
+nx=ny=60
+num_layers_arr = [16,32,64,128,256]
 
 #plot_strong_scaling_nodes(nxny_arr,proc_list,num_layers,num_reps)
 
