@@ -14,28 +14,30 @@ include(srcdir("mesh.jl"))
 function plot_norm_increasing_layers(layers_arr, layer_reff)
     data = load("data/exp_raw/solution_layers_$layer_reff.jld2")
     u_data_reff = data["u"]
+    u_norm_reff = LinearAlgebra.norm(u_data_reff, Inf)
     norm_arr = []
 
     for layer in layers_arr
         data_layer = load("data/exp_raw/solution_layers_$layer.jld2")
         u_data_layer = data_layer["u"]
         diff_layer = u_data_reff.-u_data_layer
-        norm_layer = LinearAlgebra.norm(diff_layer)
-        push!(norm_arr, norm_layer)
+        norm_layer = LinearAlgebra.norm(diff_layer, Inf)
+        norm_normalize = norm_layer/u_norm_reff
+        push!(norm_arr, norm_normalize)
     end
 
     fig=Figure()
     ax = Axis(
         fig[1,1],
         xlabel = "Number of layers",
-        ylabel = "Norm",
+        ylabel = "Relative infinity-norm error",
         xticks = layers_arr
         )
 
-    lines!(ax,layers_arr,norm_arr, color= :purple)
-    scatter!(ax,layers_arr,norm_arr, color= :purple)
+    lines!(ax,layers_arr,norm_arr, color= :green)
+    scatter!(ax,layers_arr,norm_arr, color= :green)
 
-    save("plots/layer_behaviour/norm_increasing_layers.png",fig)
+    save("plots/norm_increasing_layers_inf_norm.png",fig)
 end     
 
 # plot first and last and heatmap
@@ -57,7 +59,7 @@ function plot_first_and_last(layer)
         )
     lines!(ax,mesh,u_last, color =:yellow)
     lines!(ax,mesh, u_initial, color=:blue)
-    save("plots/layer_behaviour/first_last_layer$layer.png", fig)
+    save("plots/first_last_layer$layer.png", fig)
 end 
 
 function plot_u_evolution_heatmap(layer)
@@ -70,19 +72,11 @@ function plot_u_evolution_heatmap(layer)
     heatmap = Figure()
     ax = Axis(heatmap[1,1], xlabel = "U", ylabel = "Time")
     heatmap!(ax,mesh, t_heatmap,u_heatmap)
-    save("plots/layer_behaviour/u_over_time_$layer.png", heatmap)
+    save("plots/u_over_time_$layer.png", heatmap)
 end  
 
 ## Example 
-layers_arr = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-plot_norm_increasing_layers(layers_arr,20)
-plot_first_and_last(2)
-plot_u_evolution_heatmap(2)
-plot_first_and_last(10)
-plot_u_evolution_heatmap(10)
-plot_first_and_last(14)
-plot_u_evolution_heatmap(14)
-plot_first_and_last(19)
-plot_u_evolution_heatmap(19)
-plot_first_and_last(20)
-plot_u_evolution_heatmap(20)
+layers_arr = [1,3,5,7,9,11,13,15,17,19]
+plot_norm_increasing_layers(layers_arr,19)
+# plot_first_and_last(7)
+# plot_u_evolution_heatmap(7)
