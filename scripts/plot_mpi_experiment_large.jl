@@ -80,20 +80,7 @@ function get_available_efficiency_data(proc_list, num_reps, nx, ny, num_layers)
     return available_procs, efficiency_arr, p_ref
 end
 
-function plot_strong_scaling_nodes()
-    proc_list = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
-
-    nxny_arr = [
-        (160,160),
-        (320,160),
-        (320,320),
-        (640,320),
-        (640,640)
-    ]
-
-    num_reps = 10
-    num_layers = 2
-
+function plot_strong_scaling_nodes(nxny_arr,proc_list,num_layers,num_reps)
     fig = Figure()
 
     ax = Axis(
@@ -164,19 +151,9 @@ function plot_strong_scaling_nodes()
     save("plots/large_strong_scaling_nodes.png", fig)
 end
 
-function plot_strong_scaling_layers()
-    proc_list = [1,2,4,8,16,32,64,128,256,512]
+function plot_strong_scaling_layers(nx,ny,proc_list,num_layers_arr,num_reps)
 
-    # Choose the fixed mesh size for the layer-scaling experiment.
-    nx = 70
-    ny = 70
-
-    # Choose the layer counts that you actually ran.
-    num_layers_arr = [16,32,64,128,256,512,1024,2048]
-
-    num_reps = 10
-
-    fig = Figure()
+    fig = Figure(size=(1200,600))
 
     ax = Axis(
         fig[1, 1];
@@ -240,24 +217,13 @@ function plot_strong_scaling_layers()
         )
     end
 
-    axislegend(ax, position = :lb)
+    Legend(fig[1,2],ax)
 
     mkpath("plots")
-    save("plots/large_strong_scaling_layers.png", fig)
-
-    return fig
+    save("plots/large_strong_scaling_layers_nx$(nx)_ny$(ny)_reps$(num_reps).png", fig)
 end
 
-function plot_efficiency_layers()
-    proc_list = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-
-    nx = 70
-    ny = 70
-
-    num_layers_arr = [16, 32, 64, 128, 256, 512, 1024, 2048]
-
-    num_reps = 10
-
+function plot_efficiency_layers(nx,ny,proc_list,num_layers_arr,num_reps)
     fig = Figure(size=(1200,600))
 
     ax = Axis(
@@ -322,12 +288,18 @@ function plot_efficiency_layers()
     Legend(fig[1,2],ax)
 
     mkpath("plots")
-    save("plots/large_efficiency_layers_exp.png", fig)
-
-    return fig
+    save("plots/large_efficiency_layers_nx$(nx)_ny$(ny)_reps$(num_reps).png", fig)
 end
 
-# plot_strong_scaling_nodes()
-# plot_strong_scaling_layers()
+# Usage: plotting 
+nxny_arr = [(160,160),(320,160),(320,320),(640,320),(640,640)]
+num_reps = 10
+num_layers = 2
+proc_list = [128,256,512,1024,2048]
+nx=ny=130
+num_layers_arr = [16,32,64,128,256,512]
 
-plot_efficiency_layers()
+#plot_strong_scaling_nodes(nxny_arr,proc_list,num_layers,num_reps)
+
+plot_strong_scaling_layers(nx,ny,proc_list,num_layers_arr,num_reps)
+plot_efficiency_layers(nx,ny,proc_list,num_layers_arr,num_reps)

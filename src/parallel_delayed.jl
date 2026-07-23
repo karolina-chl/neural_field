@@ -37,7 +37,7 @@ function mesh_setup(nx, ny)
     (;fq_fn_I,fq_fn_dI,fq_refdy,gf_fn_gn,gn_x)
 end   
 
-function restrict_setup(setup, ln_gn, gn_ln,num_layers)
+function restrict_setup(setup, ln_gn, gn_ln, num_layers)
     (;fq_fn_I, fq_fn_dI, fq_refdy, gf_fn_gn, gn_x) = setup
 
     ln_gn = collect(ln_gn)
@@ -95,7 +95,7 @@ function restrict_setup(setup, ln_gn, gn_ln,num_layers)
         ln_x,
         ngf,
         ngn,
-        lf_gf,
+        lf_gf, # not used 
         lf_fn_gn, # not used 
         lf_fn_ln, # not used 
         gn_u,

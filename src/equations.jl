@@ -5,36 +5,36 @@ All equations used in the neural field model are defined in this file
 using LinearAlgebra
 using SpecialFunctions
 
-function w(x,y)
-    WAε(norm(x-y))
-end
-
 function f(u)
     θ=0.9
-    α=10
+    a=10
     V=0.1
-    ϕ(α*(u-θ)/sqrt(1+α^2*V))
+    ϕ(a*(u-θ)/sqrt(1+a^2*V))
 end
 
 function ϕ(x)
     1/2*(1+erf(x/sqrt(2)))
 end    
 
-function φ(r;)
-    α=5
+function φ(r)
+    γ=5
     β=1/4
-    α / (cosh(β*norm(r)))
+    γ / (cosh(β*norm(r)))
+end
+
+function w(x,y)
+    W(norm(x-y))
 end
     
-function A(x)
+function W_tilde(x)
     b = 0.4
     exp(-b*x)*(b*sin(x)+cos(x))
 end
 
-function WAε(x)
+function W(x)
     ε=0.05
-    Ax=A(x)
-    abs(Ax) >= ε ? Ax : zero(Ax)
+    Wx=W_tilde(x)
+    abs(Wx) >= ε ? Wx : zero(Wx)
 end
 
 function τ(x,y) 

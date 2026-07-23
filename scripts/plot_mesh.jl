@@ -1,3 +1,4 @@
+using DrWatson
 import GalerkinToolkit as GT
 using GLMakie
 
@@ -93,20 +94,26 @@ end
 
 function plot_2d_mesh(Ω)
     """Plot 2D mesh"""
-    axis = (aspect = Makie.DataAspect(),)
+    axis = (
+        aspect = Makie.DataAspect(),
+        xticks=[0,1], 
+        yticks=[0,1],
+        xticklabelsize = 30,
+        yticklabelsize = 30)
     shading = Makie.NoShading
-    fig = GT.makie_surfaces(Ω;color=:pink,axis,shading)
-    GT.makie_edges!(Ω;color=:blue)
-    save("plots/domain.png", fig)
+    fig = GT.makie_surfaces(Ω;color=:white,axis,shading)
+    GT.makie_edges!(Ω;color=:purple,linewidth = 2)
+    save("plots/domain.png", fig;px_per_unit = 6)
+    save("plots/domain.pdf", fig;px_per_unit = 6)
     println("Figure saved in the plots folder as 'domain.png'")
 end 
 
 
-###### Create a meah and save plotted mesh in the plots folder 
+###### Create a mesh and save plotted mesh in the plots folder 
 
 V, Ω, dΩ = create_mesh(5, 5, 1, 1)
 qn_x = quadrature_coordinates(V, dΩ)
 plot_mesh(V, Ω, qn_x)
 
-mesh = create_cartesian_mesh((0,1,0,1), (2,2))
+mesh = create_cartesian_mesh((0,1,0,1), (3,3))
 plot_2d_mesh(mesh)
