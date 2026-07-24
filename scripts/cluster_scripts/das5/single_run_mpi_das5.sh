@@ -12,7 +12,5 @@ echo "Slurm tasks per node $SLURM_NTASKS_PER_NODE"
 
 srun -n $SLURM_NTASKS hostname | sort | uniq -c
 
-srun --mpi=pmix \
-    --ntasks=$NP \
-    --ntasks-per-node=$SLURM_NTASKS_PER_NODE \
-    julia --project=. scripts/mpi_experiment.jl $NX $NY $NUM_LAYERS
+mpirun -np $NP \
+    julia --project=. scripts/mpi_experiment.jl "$NX" "$NY" "$NUM_LAYERS"
