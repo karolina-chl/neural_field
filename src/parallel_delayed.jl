@@ -226,29 +226,38 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
     # Setup
     elap_setup = zeros(1)
     
-    elap_setup[1] = @elapsed p_setup = map(ranks) do rank
-        prepare_setup_on_rank(rank, np, nx, ny, num_layers)
+    elap_setup[1] = @elapsed begin
+        p_setup = map(ranks) do rank
+            prepare_setup_on_rank(rank, np, nx, ny, num_layers)
+        end
+
+        # Initial condition
+        ngn = PA.getany(map(setup->setup.ngn,p_setup))
+        gn_partition = PA.uniform_partition(ranks, np, ngn)
+        p_ln_u0  = map(setup_ln_u0, p_setup)
+        
+        u0 = PA.PVector(p_ln_u0, gn_partition)
+        u = similar(u0)
+        du = similar(u0)
+        
+        z_layers = [map(setup_ln_z0, p_setup, p_ln_u0) for _ in 1:num_layers]
+        dz_layers = [map(z -> zero(z), z_layers[layer]) for layer in 1:num_layers]
+        
+        uz = ArrayPartition(u, z_layers...)
+        duz = ArrayPartition(du, dz_layers...)
     end
 
-    mem = Base.summarysize(p_setup)
+    mem = [Base.summarysize(p_setup),
+        Base.summarysize(u),
+        Base.summarysize(du),
+        Base.summarysize(z_layers),
+        Base.summarysize(dz_layers),
+        Base.summarysize((p_setup,u,du,z_layers,dz_layers,))
+    ]
 
-    # Initial condition
-    ngn = PA.getany(map(setup->setup.ngn,p_setup))
-    gn_partition = PA.uniform_partition(ranks, np, ngn)
-    p_ln_u0  = map(setup_ln_u0, p_setup)
-    
-    u0 = PA.PVector(p_ln_u0, gn_partition)
-    u = similar(u0)
-    du = similar(u0)
-    
-    z_layers = [map(setup_ln_z0, p_setup, p_ln_u0) for _ in 1:num_layers]
-    dz_layers = [map(z -> zero(z), z_layers[layer]) for layer in 1:num_layers]
-    
-    uz = ArrayPartition(u, z_layers...)
-    duz = ArrayPartition(du, dz_layers...)
-
-    nr = 1
+    nr = 10
     r_elap_rhs = [zeros(5) for _ in 1:nr]
+
     for r in 1:nr
         # reset the repetition
         elap_rhs = r_elap_rhs[r]
@@ -260,7 +269,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
         elap = Dict{Symbol,Vector{Vector{Float64}}}()
         elap[:setup] = [elap_setup]
         elap[:rhs] = r_elap_rhs
-        elap[:mem] = [[mem]]
+        elap[:mem] = [mem]
         p_elap_main = PA.gather(map(_->elap,ranks))
         file_title = file_name(nx, ny, np, num_layers)
         PA.map_main(p_elap_main) do p_elap
