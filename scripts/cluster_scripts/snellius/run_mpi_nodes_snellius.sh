@@ -20,6 +20,6 @@ do
             --ntasks=$NP \
             --time=00:15:00 \
             --exclusive \
-            scripts/single_run_mpi_snellius.sh $NX $NY $NUM_LAYERS
+            scripts/cluster_scripts/snellius/single_run_mpi_snellius.sh $NX $NY $NUM_LAYERS
     done    
 done  
