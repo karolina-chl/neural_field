@@ -2,9 +2,9 @@
 
 mkdir -p data/exp_raw/mpi_exp
 
-nx_arr=(160)
-ny_arr=(160)
-proc_arr=(2048 4096 8192)
+nx_arr=(200)
+ny_arr=(200)
+proc_arr=(1 2 4)
 
 for idx in ${!nx_arr[@]}
 do
@@ -18,7 +18,7 @@ do
         sbatch \
             --partition=fat_rome \
             --ntasks=$NP \
-            --time=00:15:00 \
+            --time=03:00:00 \
             --exclusive \
             scripts/cluster_scripts/snellius/single_run_mpi_snellius.sh $NX $NY $NUM_LAYERS
     done    

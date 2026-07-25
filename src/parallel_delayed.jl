@@ -255,7 +255,7 @@ function main(backend,np,nx,ny,num_layers; save = true, file_name = title)
         Base.summarysize((p_setup,u,du,z_layers,dz_layers,))
     ]
 
-    nr = 10
+    nr = 50
     r_elap_rhs = [zeros(5) for _ in 1:nr]
 
     for r in 1:nr
