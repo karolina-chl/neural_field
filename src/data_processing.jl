@@ -98,4 +98,23 @@ function get_partial_strong_scaling_data(time_component,proc_list, nx, ny, num_l
         push!(best_time_arr, median(max_arr))
     end     
     return best_time_arr
+end   
+
+function get_memory_data(nx,ny,num_proc,num_layers,entries)
+    data = JSON.parsefile("data/exp_raw/mpi_exp/results_nx$(nx)ny$(ny)np$(num_proc)num_layers$(num_layers).json")
+    memory_data = [entry["mem"][1][entries] for entry in data]
+    return memory_data
 end     
+
+function get_max_memory_across_processors(nx,ny,num_proc,num_layers,entries::Integer)
+    memory_data = get_memory_data(nx,ny,num_proc,num_layers,entries)
+    max_memory = maximum(memory_data)
+    return max_memory      
+end    
+
+function get_max_memory_across_processors(nx,ny,num_proc,num_layers,entries::AbstractVector)
+    memory_data = get_memory_data(nx,ny,num_proc,num_layers,entries)
+    memory_data_restructured = collect.(zip(memory_data...))
+    max_memory = maximum.(memory_data_restructured)
+    return max_memory      
+end
