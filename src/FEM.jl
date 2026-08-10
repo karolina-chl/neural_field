@@ -5,7 +5,6 @@ Functions needed for FEM method
 import GalerkinToolkit as GT
 using RecursiveArrayTools
 using SparseArrays
-import Gmsh
 
 include("equations.jl")
 

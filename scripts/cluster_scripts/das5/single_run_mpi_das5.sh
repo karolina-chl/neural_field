@@ -13,4 +13,9 @@ echo "Slurm tasks per node $SLURM_NTASKS_PER_NODE"
 srun -n $SLURM_NTASKS hostname | sort | uniq -c
 
 mpirun -np $NP \
-    julia --project=. scripts/mpi_experiment.jl "$NX" "$NY" "$NUM_LAYERS"
+    julia \
+        --threads=1 \
+        -O3 \
+        --check-bounds=no \
+        --project=. \
+        scripts/mpi_experiment.jl "$NX" "$NY" "$NUM_LAYERS"
