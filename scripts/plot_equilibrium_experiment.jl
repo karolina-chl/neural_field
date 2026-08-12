@@ -8,9 +8,9 @@ using Statistics
 include(srcdir("plotting_functions.jl"))
 
 # Plotting 
-# plot_first_and_last(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
-# plot_u_evolution_heatmap(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
-# visualize_z(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
+plot_first_and_last(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
+plot_u_evolution_heatmap(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
+visualize_z(2, "equilibrium_tol_1.0e-7_solution_layers_2.jld2")
 
 # Infinity norm 
 reference_data = load("data/exp_raw/equilibrium_tol_1.0e-7_solution_layers_2.jld2")
