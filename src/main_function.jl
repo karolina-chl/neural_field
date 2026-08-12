@@ -94,17 +94,36 @@ function solver(G_params, S_params, params)
         rhs_delayed_corrected!(args...;workspace)
     end
     
-    save_dt = S_params.save_time_step
+    # determine additional arguments for the solver 
+    solve_args = (;)
 
-    if isnothing(save_dt)
-        ode_solution = DE.solve(ode,DE.Tsit5())
-    else
-        ode_solution = DE.solve(ode,DE.Tsit5();saveat=save_dt)
-    end
+    save_dt = S_params.save_time_step
+    if save_dt !== nothing 
+        solve_args = merge(solve_args,(;saveat=save_dt))
+    end 
+
+    if_equlibrium = S_params.stop_at_equilibrium
+    if if_equlibrium
+        tol = S_params.equilibrium_tolerance
+        termination_condition = DE.TerminateSteadyState(tol, tol)
+        solve_args = merge(solve_args, (;callback = termination_condition))
+        println("Equilibrium stoping conditions tolerance set to $tol")
+    end 
+    
+    
+    #solve the problem 
+    ode_solution = DE.solve(ode,DE.Tsit5(); abstol = 1e-10, reltol = 1e-10, solve_args...)
+
+    println("Solver finished. Solver returned: $(ode_solution.retcode)")
+    println("Simulated until t= $(ode_solution.t[end])")
 
     #save the data
     if params.save_data
         file_name = params.datafile_name
+        if if_equlibrium
+            file_name = params.datafile_name
+            file_name = "equilibrium_tol_$(tol)_" * file_name
+        end     
         save_layers_data = params.save_layers_data
         save_solution_jld(ode_solution,num_layer,file_name;save_layers_data)
         println("Solution saved in data folder as $file_name")

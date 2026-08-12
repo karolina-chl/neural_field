@@ -634,3 +634,94 @@ function plot_memory_comparison(nxny_array, proc, num_layers)
     axislegend(ax, position = :lt)
     save("plots/total_mem_per_rank_M$(M_bln).pdf",fig)
 end
+
+function plot_first_and_last(layer, filename)
+    data = load("data/exp_raw/$filename")
+    u_data = data["u"]
+    t = data["t"]
+    u_last = u_data[end] 
+    u_initial = u_data[1]
+
+    num_el = length(u_data[1])
+    mesh = range(-30,30,length = num_el)
+    fig = Figure(size=(800,400),fontsize=18)
+    ax = Axis(
+        fig[1,1],
+        xlabel = "x", 
+        ylabel = "u(x,t)",
+        xlabelsize = 25,
+        ylabelsize = 25,
+        xticks = [-30,-15,0,15,30]
+        )
+    lines!(ax,mesh,u_last, color =:orange, linewidth = 2, label = "Final time, t=$(round(t[end]; digits = 2))")
+    lines!(ax,mesh, u_initial, color=:blue, linewidth = 2, label = "Initial time, t=$(t[1])")
+    axislegend(ax, position = :rt)
+    save("plots/first_last_layer$layer.pdf", fig)
+end 
+
+function common_colorrange(filename)
+    data = load("data/exp_raw/$filename")
+
+    u_data = data["u"][end]
+    z_data = data["z"][end]
+
+    u_min = minimum(minimum.(u_data))
+    u_max = maximum(maximum.(u_data))
+
+    z_min = minimum(minimum.(Iterators.flatten(z_data)))
+    z_max = maximum(maximum.(Iterators.flatten(z_data)))
+
+    return (min(u_min, z_min), max(u_max, z_max))
+end
+
+function plot_u_evolution_heatmap(layer, filename)
+    data = load("data/exp_raw/$filename")
+    u_data = data["u"]
+    u_heatmap = reduce(hcat,u_data)
+    t_heatmap = data["t"]
+    num_el = length(u_data[1])
+    mesh = range(-30,30,length = num_el)
+    colors = common_colorrange(filename)
+
+    fig = Figure(size = (400,800), fontsize=18)
+    ax = Axis(fig[1,1], xlabel = "x", ylabel = "t", 
+    xticks = [-30,0,30], 
+    yticks = [round(t_heatmap[1]; digits=1),round(t_heatmap[end]; digits=2)])
+    hm = heatmap!(ax,mesh, t_heatmap,u_heatmap,colorrange = colors)
+    Colorbar(fig[1, 2],hm,label = "u(x,t)")
+    save("plots/u_over_time_$layer.pdf", fig)
+end
+
+function visualize_z(num_layers, filename)
+
+    data = load("data/exp_raw/$filename")
+    z_data = data["z"]
+    t_data = data["t"]
+
+    z_final = z_data[end]
+
+    colors = common_colorrange(filename)
+
+    fig = Figure(size=(800,400), fontsize = 18)
+
+    heatmaps = []
+
+    for layer in 1:length(z_final)
+
+        ax = Axis(
+            fig[1,layer],
+        )
+
+        hm = heatmap!(
+            ax,
+            permutedims(z_final[layer]);
+            colorrange = colors
+        )
+
+        push!(heatmaps, hm)
+    end
+
+    # Colorbar(fig[1, length(z_final) + 1],heatmaps[1])
+
+    save("plots/z_layers_$(num_layers)_final.pdf",fig)
+end

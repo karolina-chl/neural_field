@@ -13,7 +13,7 @@ layers = parse(Int,ARGS[1])
 make_G_params(layers) = (;
     Ω = (
         build_Ω = create_cartesian_mesh,
-        Ω_args = ((-30,30),(500,))
+        Ω_args = ((-30,30),(300,))
         ),
     firing_function = (;
         f = f
@@ -32,14 +32,16 @@ make_G_params(layers) = (;
         ),
     other = (
         interpolation_degree = 1, 
-        integration_degree = 1
+        integration_degree = 2
         )
 )
 
 S_params = (
-    simulation_time = 20, 
+    simulation_time = 300, 
     solution_time_step = nothing,
-    save_time_step = 0.2,
+    save_time_step = 1,
+    stop_at_equilibrium = true,
+    equilibrium_tolerance = 1e-7 # only plays a role when stop_at_equilibrium set to true 
 )
 
 params = (
@@ -48,7 +50,7 @@ params = (
         movie_timestep = 1
     ),
     save_data = true, 
-    save_layers_data = false, 
+    save_layers_data = true, 
     datafile_name = "solution_layers_$layers.jld2"
 )
 
