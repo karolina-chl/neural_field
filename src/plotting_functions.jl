@@ -83,7 +83,7 @@ function plot_strong_scaling_nodes(
 
     ax = Axis(
         fig[1, 1];
-        xlabel = "Number of processors",
+        xlabel = "Number of processes",
         ylabel = "Wall clock time (s)",
         xticks = proc_list,
         xscale = log2,
@@ -166,7 +166,7 @@ function plot_strong_scaling_layers(
 
     ax = Axis(
         fig[1, 1];
-        xlabel = "Number of processors",
+        xlabel = "Number of MPI processes",
         ylabel = "Wall clock time (s)",
         xticks = proc_list,
         xscale = log2,
@@ -250,7 +250,7 @@ function plot_efficiency_layers(
 
     ax = Axis(
         fig[1, 1];
-        xlabel = "Number of processors",
+        xlabel = "Number of MPI processes",
         ylabel = "Parallel efficiency",
         xticks = proc_list,
         xscale = log2,
@@ -329,7 +329,7 @@ function plot_efficiency_nodes(
 
     ax = Axis(
         fig[1, 1];
-        xlabel = "Number of processors",
+        xlabel = "Number of MPI processes",
         ylabel = "Parallel efficiency",
         xticks = proc_list,
         xscale = log2,
@@ -412,15 +412,15 @@ function plot_comunication_vs_computation(
     ratio_comp = comp_arr_full./total
     total_1 = ones(length(total))
 
-    fig = Figure(fontsize=18)
+    fig = Figure(size = (800,350),fontsize=25)
 
     x = 1:length(proc_list)
 
     ax = Axis(
         fig[1, 1],
-        xlabel = "Number of processors",
-        ylabel = "Communication vs. Computation",
-        xticks = (x, string.(proc_list))
+        xlabel = "MPI processes",
+        ylabel = "Fraction",
+        xticks = (x, string.(proc_list)),
     )
 
 
@@ -445,6 +445,23 @@ function plot_comunication_vs_computation(
     save("plots/communication_vs_computation_nx$(nx)_ny$(ny)_num_layers$(num_layers).pdf",fig)
 end
 
+function plot_communication_vs_computation_legend()
+    fig = Figure(size = (300, 40))
+
+    Legend(
+        fig[1, 1],
+        [
+            PolyElement(color = colorant"#9EA8B0"),
+            PolyElement(color = colorant"#D7B667")
+        ],
+        ["Computation", "Communication"],
+        orientation = :horizontal
+    )
+
+    save("plots/communication_vs_computation_legend.pdf", fig)
+end
+
+
 function plot_partial_strong_scaling(
     nx,
     ny,
@@ -464,7 +481,7 @@ function plot_partial_strong_scaling(
 
     ax = Axis(
         fig[1, 1];
-        xlabel = "Number of processors",
+        xlabel = "Number of MPI processes",
         ylabel = "Wall clock time (s)",
         xticks = proc_list,
         xscale = log2,
@@ -540,9 +557,9 @@ function plot_memory_comparison_per_rank(nxny_array, proc, num_layers)
 
     ax = Axis(
         fig[1, 1],
-        xlabel = "Number of unknowns M",
+        xlabel = "Number of unknowns M (bln)",
         ylabel = "Max memory input memory GB",
-        xticks = (x, string.(round.(M_bln;digits=2)," bln"))
+        xticks = (x, round.(M_bln;digits=2))
     )
 
     barplot!(
@@ -603,7 +620,7 @@ function plot_memory_comparison(nxny_array, proc, num_layers)
     M_bln = M/1000000000
     x = 1:n
 
-    fig = Figure(fontsize=18)
+    fig = Figure(size = (900,500), fontsize=25)
 
     palette = [colorant"#4682B4",colorant"#008080"]
 
