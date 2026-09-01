@@ -1,4 +1,11 @@
-# neural_field
+# Enabling Large-Scale Simulation of Axonal Delays in Neurobiological Networks
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/547b1c13-8d30-44c8-ae0c-032430d00b7b" width="49%" />
+  <img src="https://github.com/user-attachments/assets/6257ee86-c3b5-40e2-9f76-c4e976b3dd12" width="49%" />
+</p>
+
+# Reproducing the results
 
 This code base is using the [Julia Language](https://julialang.org/) and
 [DrWatson](https://juliadynamics.github.io/DrWatson.jl/stable/)
@@ -7,8 +14,7 @@ to make a reproducible scientific project named
 
 To (locally) reproduce this project, do the following:
 
-0. Download this code base. Notice that raw data are typically not included in the
-   git-history and may need to be downloaded independently.
+0. Download this code base. 
 1. Open a Julia console and do:
    ```
    julia> using Pkg
@@ -19,10 +25,3 @@ To (locally) reproduce this project, do the following:
 
 This will install all necessary packages for you to be able to run the scripts and
 everything should work out of the box, including correctly finding local paths.
-
-You may notice that most scripts start with the commands:
-```julia
-using DrWatson
-@quickactivate "neural_field"
-```
-which auto-activate the project and enable local path handling from DrWatson.
