@@ -1,6 +1,6 @@
 using DrWatson
 import GalerkinToolkit as GT
-using GLMakie
+using CairoMakie
 
 include(srcdir("mesh.jl"))
 
@@ -87,7 +87,7 @@ function plot_mesh(V,Ω,qn_x)
     )
 
     Legend(fig[1,2], ax)
-    save("plots/mesh.png",fig)
+    save("plots/mesh_with_nodes_and_quadrature.png",fig)
 
     println("Plotted mesh saved in the folder plots as mesh.png")
 end 

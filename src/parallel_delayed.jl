@@ -123,7 +123,7 @@ function rhs_IW!(setup, gn_ln_zl,ln_du, ln_u)
     fill!(gn_u,0)
 
     Ty = eltype(gn_x) # type of coordinates stored in gn_x 
-    zy = zero(Ty) # zero coordinate vectore
+    zy = zero(Ty) # zero coordinate vector
     zJt = zero(zy*transpose(zy)) # zero matrix-like object for the Jacobian transpose 
     fn_y = zeros(Ty,nfn) # physical coordinates of the nodes of one face 
     fq_y = zeros(Ty,nfq) # physical coordinates of the quadrature points of one face

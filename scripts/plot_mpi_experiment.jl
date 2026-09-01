@@ -43,22 +43,9 @@ plot_comunication_vs_computation(600,600,[1024,2048,4096],2,50)
 plot_communication_vs_computation_legend()
 
 # Communication and Computation ratios
-plot_partial_strong_scaling(100,100,[1,2,4,8,16,32,64,128,256,512,1024],2)
-
-plot_partial_strong_scaling(100,100,[1,2,4,8,16,32,64,128,256,512,1024],31)
-plot_partial_strong_scaling(200,200,[2,4,8,16,32,64,128,256,512,1024],2)
-
-plot_partial_strong_scaling(100,100,[32,64,128,256,512,1024],158)
-plot_partial_strong_scaling(300,300,[32,64,128,256,512,1024],2)
 
 plot_partial_strong_scaling(100,100,[128,256,512,1024,2048,4096],497)
 plot_partial_strong_scaling(400,400,[128,256,512,1024,2048,4096],2)
-
-plot_partial_strong_scaling(100,100,[512,1024,2048,4096],1211)
-plot_partial_strong_scaling(500,500,[512,1024,2048,4096],2)
-
-plot_partial_strong_scaling(100,100,[1024,2048,4096],2508)
-plot_partial_strong_scaling(600,600,[1024,2048,4096],2)
 
 # Memory comparison 
 plot_memory_comparison(

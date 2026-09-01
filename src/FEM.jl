@@ -98,23 +98,7 @@ function synaptic_matrix_dense_transposed(V,dΩ,w)
         end
     end
     return W
-end
-
-function rhs!(node_du,node_u,p,t;workspace)
-    (;W,V,dΩ,node_wfu,point_fu) = workspace
-    u = GT.discrete_field(V,node_u)
-    u_faces = GT.each_face(u,dΩ;tabulate=(GT.value,))
-    point = 0
-    for u_face in u_faces
-        for u_point in GT.each_point(u_face)
-            point += 1
-            u = GT.field(GT.value,u_point)
-            point_fu[point] = f(u)
-        end
-    end
-    mul!(node_wfu,W,point_fu)
-    node_du .= node_wfu .- node_u
-end    
+end  
 
 function rhs_delayed!(
     duz,
